@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE PLAYGROUND_FILES CONFIGURE_DEPENDS
+    ${PLAYGROUND_ROOT_DIR}/core/**.h
+    ${PLAYGROUND_ROOT_DIR}/core/**.cpp
     ${PLAYGROUND_ROOT_DIR}/system/**.h
     ${PLAYGROUND_ROOT_DIR}/system/**.cpp
 )
@@ -16,8 +18,7 @@ add_executable(${PROJECT_NAME}
     ${PLAYGROUND_FILES}
 )
 target_include_directories(${PROJECT_NAME}
-    PUBLIC ${ENGINE_ROOT_DIR}
-    PUBLIC ${PLAYGROUND_ROOT_DIR}
+    PUBLIC ${PROJECT_ROOT_DIR}/src
 )
 target_link_libraries(${PROJECT_NAME}
     PRIVATE engine
