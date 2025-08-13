@@ -1,0 +1,10 @@
+function(group_sources TARGET_NAME ROOT_DIR)
+    get_target_property(TARGET_SOURCES ${TARGET_NAME} SOURCES)
+
+    foreach(SOURCE_FILE ${TARGET_SOURCES})
+        file(RELATIVE_PATH RELATIVE_PATH ${ROOT_DIR} ${SOURCE_FILE})
+        get_filename_component(SOURCE_PATH ${RELATIVE_PATH} PATH)
+        string(REPLACE "/" "\\" SOURCE_PATH ${SOURCE_PATH})
+        source_group(${SOURCE_PATH} FILES ${SOURCE_FILE})
+    endforeach()
+endfunction()
