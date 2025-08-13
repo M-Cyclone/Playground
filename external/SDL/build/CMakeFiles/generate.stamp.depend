@@ -1,0 +1,72 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.27/Modules/BasicConfigVersion-AnyNewerVersion.cmake.in
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeCInformation.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeCheckCompilerFlagCommonPatterns.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeCommonLanguageInclude.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeDependentOption.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeGenericSystem.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeInitializeConfigs.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeLanguageInformation.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakePackageConfigHelpers.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeParseArguments.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakePushCheckState.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeRCInformation.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeSystemSpecificInformation.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CMakeSystemSpecificInitialize.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CPack.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CPackComponent.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckCCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckCSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckCSourceRuns.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckCXXCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckCXXSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckLanguage.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckLibraryExists.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckLinkerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckStructHasMember.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Compiler/MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Compiler/MSVC.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/FindGit.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/FindPkgConfig.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/GNUInstallDirs.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Internal/CheckCompilerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Internal/CheckFlagCommonConfig.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Internal/CheckLinkerFlag.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Internal/CheckSourceRuns.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Platform/Windows-Initialize.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Platform/Windows-MSVC-C.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Platform/Windows-MSVC.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Platform/Windows.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/Platform/WindowsPaths.cmake
+C:/Program Files/CMake/share/cmake-3.27/Modules/WriteBasicConfigVersionFile.cmake
+C:/Program Files/CMake/share/cmake-3.27/Templates/CPackConfig.cmake.in
+F:/GameProjs/Snapshot/External/SDL/CMakeLists.txt
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/3.27.3/CMakeCCompiler.cmake
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/3.27.3/CMakeRCCompiler.cmake
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/3.27.3/CMakeSystem.cmake
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/SDL_build_config.h.intermediate
+F:/GameProjs/Snapshot/External/SDL/cmake/3rdparty.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/CPackProjectConfig.cmake.in
+F:/GameProjs/Snapshot/External/SDL/cmake/FindLibUSB.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/GetGitRevisionDescription.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/PreseedEmscriptenCache.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/PreseedMSVCCache.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/SDL3Config.cmake.in
+F:/GameProjs/Snapshot/External/SDL/cmake/cmake_uninstall.cmake.in
+F:/GameProjs/Snapshot/External/SDL/cmake/macros.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/sdl3.pc.in
+F:/GameProjs/Snapshot/External/SDL/cmake/sdlchecks.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/sdlcompilers.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/sdlcpu.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/sdlmanpages.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/sdlplatform.cmake
+F:/GameProjs/Snapshot/External/SDL/cmake/sdltargets.cmake
+F:/GameProjs/Snapshot/External/SDL/include/build_config/SDL_build_config.h.cmake
+F:/GameProjs/Snapshot/External/SDL/include/build_config/SDL_revision.h.cmake

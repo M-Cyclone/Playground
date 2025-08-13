@@ -1,0 +1,8 @@
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/SDL3-shared.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/SDL3_test.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/SDL_uclibc.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/uninstall.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/PACKAGE.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/INSTALL.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/ALL_BUILD.dir
+F:/GameProjs/Snapshot/External/SDL/build/CMakeFiles/ZERO_CHECK.dir
