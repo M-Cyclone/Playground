@@ -7,7 +7,6 @@
 #include <SDL3/SDL.h>
 
 #include <memory>
-#include <random>
 
 void handle_event(SDL_Event& e)
 {
@@ -135,7 +134,7 @@ int main(int argc, char** argv)
     }
 
     std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> sdl_window{
-        SDL_CreateWindow("VoxPlane", 1920, 1080, 0),
+        SDL_CreateWindow("Misaka Playground - FPS(0)", 1920, 1080, 0),
         SDL_DestroyWindow
     };
     if (!sdl_window)
@@ -153,47 +152,16 @@ int main(int argc, char** argv)
         SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Renderer creation failed: %s", SDL_GetError());
         return -1;
     }
+    if (!SDL_SetRenderVSync(sdl_renderer.get(), true))
+    {
+        SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Failed to enable VSync: %s", SDL_GetError());
+        return -1;
+    }
 
     // TODO: add render_target resize to event handling.
     SDLWindowRenderTarget render_target(sdl_renderer.get());
 
-    SDLTextureRenderTarget texture_render_target(sdl_renderer.get());
-    texture_render_target.Resize(1920, 1080);
-
-    // We will create a color attachment which has the same size with the screen.
-    // So when we resize the viewport window, we just need to change the viewport when we render the scene.
-    SDL_Rect display_bounds;
-    {
-        int                  display_count = 0;
-        const SDL_DisplayID* display_ids = SDL_GetDisplays(&display_count);
-        if (!display_ids)
-        {
-            SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Failed to get displays: %s", SDL_GetError());
-            return -1;
-        }
-
-        if (!SDL_GetDisplayBounds(display_ids[0], &display_bounds))
-        {
-            SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Failed to get display info at (0): %s", SDL_GetError());
-            return -1;
-        }
-    }
-
-    int32_t index = 0;
-
-    int* pixel_index;
-    pixel_index = (int*)malloc(sizeof(int) * 1920 * 1080);
-    for (int j = 0; j < 1080; ++j)
-    {
-        for (int i = 0; i < 1920; ++i)
-        {
-            pixel_index[i + j * 1920] = i + j * 1920;
-        }
-    }
-    std::shuffle(pixel_index, pixel_index + 1920 * 1080, std::mt19937(std::random_device()()));
-    uint8_t color = 255;
-
-    uint64_t last_time_point = SDL_GetTicks();
+    uint64_t last_time_point = SDL_GetTicksNS();
     while (true)
     {
         SDL_Event e;
@@ -209,35 +177,28 @@ int main(int argc, char** argv)
             }
         }
 
-        const uint64_t curr_time_point = SDL_GetTicks();
-        const uint64_t delta_time_milliseconds = std::max<uint64_t>(curr_time_point - last_time_point, 1);
-        const float    delta_time_seconds = (float)delta_time_milliseconds * 0.001f;
+        const uint64_t curr_time_point = SDL_GetTicksNS();
+        const uint64_t delta_time_nanoseconds = std::max<uint64_t>(curr_time_point - last_time_point, 1);
+        const double delta_time_seconds = (double)delta_time_nanoseconds * 1e-9;
+
+        {
+            render_target.Clear(0, 0, 0, 0, true);
+            render_target.Present();
+        }
 
         last_time_point = curr_time_point;
 
-        char title_buffer[256] = {};
-        std::sprintf(title_buffer, "Misaka Playground - FPS(%.3f)", 1000.0f / delta_time_milliseconds);
-
-        SDL_SetWindowTitle(sdl_window.get(), title_buffer);
-
-        render_target.Clear(0, 0, 0, 0, true);
-
-        texture_render_target.Bind();
-        for (int i = 0; i < 128; ++i)
         {
-            render_target.DrawPixel(pixel_index[index] % 1920, pixel_index[index] / 1920, color, color, color, color);
-            ++index;
+            static uint64_t accumulated_time_for_update_title = curr_time_point;
+            accumulated_time_for_update_title += delta_time_nanoseconds;
+            if (accumulated_time_for_update_title >= 1000'000'000)
+            {
+                accumulated_time_for_update_title -= 1000'000'000;
+
+                static char title_buffer[256] = {};
+                std::sprintf(title_buffer, "Misaka Playground - FPS(%.3f)", 1e9f / delta_time_nanoseconds);
+                SDL_SetWindowTitle(sdl_window.get(), title_buffer);
+            }
         }
-        if (index >= 1920 * 1080)
-        {
-            color = 255 - color;
-            index = 0;
-        }
-
-        texture_render_target.Unbind();
-
-        render_target.DrawTexture(0, 0, 1920, 1080, texture_render_target.GetRawTexture());
-
-        render_target.Present();
     }
 }
