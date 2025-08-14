@@ -1,8 +1,8 @@
 #pragma once
 
-#include <type_traits>
+#include "engine/math/math_funcs.h"
 
-#include "engine/core/math/math_funcs.h"
+#include <type_traits>
 
 template <typename T>
 struct TVec2
@@ -86,7 +86,7 @@ struct TVec2
     T LengthSqr() const { return x * x + y * y; }
     T Length() const { return Sqrt(LengthSqr()); }
 
-    TVec2& Normalize()
+    TVec2& Normalized()
     {
         const T len = Length();
         x /= len;
@@ -94,10 +94,10 @@ struct TVec2
         return *this;
     }
 
-    TVec2 GetNormalized() const
+    TVec2 Normalize() const
     {
         TVec2 norm = *this;
-        norm.Normalize();
+        norm.Normalized();
         return norm;
     }
 
@@ -204,7 +204,7 @@ struct TVec3
     T LengthSqr() const { return x * x + y * y + z * z; }
     T Length() const { return Sqrt(LengthSqr()); }
 
-    TVec3& Normalize()
+    TVec3& Normalized()
     {
         const T len_inv = T(1) / Length();
         x *= len_inv;
@@ -213,10 +213,10 @@ struct TVec3
         return *this;
     }
 
-    TVec3 GetNormalized() const
+    TVec3 Normalize() const
     {
         TVec3 norm = *this;
-        norm.Normalize();
+        norm.Normalized();
         return norm;
     }
 
@@ -331,7 +331,7 @@ struct TVec4
     T LengthSqr() const { return x * x + y * y + z * z + w * w; }
     T Length() const { return Sqrt(LengthSqr()); }
 
-    TVec4& Normalize()
+    TVec4& Normalized()
     {
         const T len_inv = T(1) / Length();
         x *= len_inv;
@@ -341,10 +341,10 @@ struct TVec4
         return *this;
     }
 
-    TVec4 GetNormalized() const
+    TVec4 Normalize() const
     {
         TVec4 norm = *this;
-        norm.Normalize();
+        norm.Normalized();
         return norm;
     }
 

@@ -1,10 +1,10 @@
 #pragma once
 
+#include "engine/system/macro_define.h"
+
 #include <type_traits>
 #include <algorithm>
 #include <cmath>
-
-#include "engine/core/macro_define.h"
 
 static constexpr float kEpsilon = 1e-4f;
 static constexpr double kEpsilonD = 1e-8;
