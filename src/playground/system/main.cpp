@@ -1,8 +1,7 @@
 #include "playground/core/macro_define.h"
 
-#include "playground/core/sdl_render_target.h"
-
 #include "engine/math/math.h"
+#include "engine/sdl_wrapper/sdl_gpu_types.h"
 
 #include <SDL3/SDL.h>
 
@@ -143,23 +142,8 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    std::unique_ptr<SDL_Renderer, decltype(&SDL_DestroyRenderer)> sdl_renderer{
-        SDL_CreateRenderer(sdl_window.get(), nullptr),
-        SDL_DestroyRenderer
-    };
-    if (!sdl_renderer)
-    {
-        SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Renderer creation failed: %s", SDL_GetError());
-        return -1;
-    }
-    if (!SDL_SetRenderVSync(sdl_renderer.get(), true))
-    {
-        SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Failed to enable VSync: %s", SDL_GetError());
-        return -1;
-    }
-
-    // TODO: add render_target resize to event handling.
-    SDLWindowRenderTarget render_target(sdl_renderer.get());
+    GpuDevice gpu_device(SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL, nullptr);
+    gpu_device.ClaimWindow(sdl_window.get());
 
     uint64_t last_time_point = SDL_GetTicksNS();
     while (true)
@@ -182,8 +166,31 @@ int main(int argc, char** argv)
         const double delta_time_seconds = (double)delta_time_nanoseconds * 1e-9;
 
         {
-            render_target.Clear(0, 0, 0, 0, true);
-            render_target.Present();
+            GpuCmdBuffer cmd(gpu_device);
+
+            SDL_GPUTexture* swapchain_texture = nullptr;
+            if (!cmd.WaitAndAcquireSwapchainTexture(sdl_window.get(), swapchain_texture))
+            {
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to acquire swapchain texture.\n");
+                return -1;
+            }
+
+            if (swapchain_texture)
+            {
+                SDL_GPUColorTargetInfo color_targets[1] = {};
+                color_targets[0].texture = swapchain_texture;
+                color_targets[0].clear_color = SDL_FColor{ 0.0f, 0.0f, 0.0f, 1.0f };
+                color_targets[0].load_op = SDL_GPU_LOADOP_CLEAR;
+                color_targets[0].store_op = SDL_GPU_STOREOP_STORE;
+
+                GpuRenderPass render_pass(cmd);
+                if (render_pass.BeginRenderPass(color_targets, nullptr))
+                {
+                    render_pass.EndRenderPass();
+                }
+            }
+
+            cmd.Submit();
         }
 
         last_time_point = curr_time_point;

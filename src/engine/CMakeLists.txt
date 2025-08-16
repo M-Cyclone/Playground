@@ -14,8 +14,8 @@ file(GLOB_RECURSE ENGINE_FILES CONFIGURE_DEPENDS
     ${ENGINE_ROOT_DIR}/math/**.h
     ${ENGINE_ROOT_DIR}/math/**.cpp
     
-    ${ENGINE_ROOT_DIR}/render/**.h
-    ${ENGINE_ROOT_DIR}/render/**.cpp
+    ${ENGINE_ROOT_DIR}/sdl_wrapper/**.h
+    ${ENGINE_ROOT_DIR}/sdl_wrapper/**.cpp
     
     ${ENGINE_ROOT_DIR}/system/**.h
     ${ENGINE_ROOT_DIR}/system/**.cpp
@@ -34,7 +34,7 @@ target_compile_definitions(${PROJECT_NAME}
     PUBLIC $<$<CONFIG:Release>:ENGINE_DEBUG=0>
 )
 target_link_libraries(${PROJECT_NAME}
-    PUBLIC Vulkan::Vulkan
+    PUBLIC SDL3::SDL3-shared
 )
 
 group_sources(${PROJECT_NAME} ${ENGINE_ROOT_DIR})
