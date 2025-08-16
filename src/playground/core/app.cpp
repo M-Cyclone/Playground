@@ -1,5 +1,7 @@
 #include "app.h"
 
+#include "playground/utils/file_loader.h"
+
 App::App()
 {
     if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
@@ -78,11 +80,17 @@ int32_t App::Init()
     );
     m_gpu_device->ClaimWindow(m_window.get());
 
+    m_vert_shader = LoadShader(*m_gpu_device, "triangle.vert", 0, 0, 0, 0);
+    m_frag_shader = LoadShader(*m_gpu_device, "triangle.frag", 0, 0, 0, 0);
+
     return 0;
 }
 
 void App::Exit()
 {
+    m_vert_shader.reset();
+    m_frag_shader.reset();
+
     m_gpu_device.reset();
     m_window.reset();
 }

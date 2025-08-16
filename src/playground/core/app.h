@@ -33,4 +33,8 @@ private:
     std::unique_ptr<SDL_Window, decltype(&SDL_DestroyWindow)> m_window = { nullptr, SDL_DestroyWindow };
 
     std::unique_ptr<GpuDevice> m_gpu_device;
+
+private:
+    std::unique_ptr<GpuShader> m_vert_shader;
+    std::unique_ptr<GpuShader> m_frag_shader;
 };
