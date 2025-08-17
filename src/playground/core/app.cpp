@@ -1,9 +1,15 @@
 #include "app.h"
 
-#include "playground/utils/file_loader.h"
+#include "engine/math/math.h"
 
 #include "triangle_vert.h"
 #include "triangle_frag.h"
+
+struct Vertex
+{
+    Vec3 position;
+    TVec4<uint8_t> color;
+};
 
 App::App()
 {
@@ -115,16 +121,32 @@ int32_t App::Init()
         SDL_GPUColorTargetDescription color_descs[1] = {};
         color_descs[0].format = m_gpu_device->GetSwapchainTextureFormat(m_window.get());
 
+        SDL_GPUVertexBufferDescription vertex_buffer_descs[1] = {};
+        vertex_buffer_descs[0].slot = 0;
+        vertex_buffer_descs[0].pitch = sizeof(Vertex);
+        vertex_buffer_descs[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        vertex_buffer_descs[0].instance_step_rate = 0;
+
+        SDL_GPUVertexAttribute vertex_attributes[2] = {};
+        vertex_attributes[0].location = 0;
+        vertex_attributes[0].buffer_slot = 0;
+        vertex_attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+        vertex_attributes[0].offset = offsetof(Vertex, position);
+        vertex_attributes[1].location = 1;
+        vertex_attributes[1].buffer_slot = 0;
+        vertex_attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM;
+        vertex_attributes[1].offset = offsetof(Vertex, color);
+
         SDL_GPUGraphicsPipelineCreateInfo create_info =
         {
             .vertex_shader = m_vert_shader->Get(),
             .fragment_shader = m_frag_shader->Get(),
             .vertex_input_state =
             {
-                .vertex_buffer_descriptions = nullptr,
-                .num_vertex_buffers = 0,
-                .vertex_attributes = nullptr,
-                .num_vertex_attributes = 0,
+                .vertex_buffer_descriptions = vertex_buffer_descs,
+                .num_vertex_buffers = (uint32_t)std::size(vertex_buffer_descs),
+                .vertex_attributes = vertex_attributes,
+                .num_vertex_attributes = (uint32_t)std::size(vertex_attributes),
             },
             .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
             .rasterizer_state =
@@ -143,7 +165,7 @@ int32_t App::Init()
             .target_info =
             {
                 .color_target_descriptions = color_descs,
-                .num_color_targets = 1,
+                .num_color_targets = (uint32_t)std::size(color_descs),
                 .depth_stencil_format = {},
                 .has_depth_stencil_target = false,
             },
@@ -152,11 +174,63 @@ int32_t App::Init()
         m_gfx_pipeline = std::make_unique<GpuGraphicsPipeline>(*m_gpu_device, create_info);
     }
 
+    {
+        Vertex vertices[] =
+        {
+            { Vec3(0.0f, 0.5f, 0.0f), TVec4<uint8_t>(255, 0, 0, 255) },
+            { Vec3(-0.5f, -0.5f, 0.0f), TVec4<uint8_t>(0, 255, 0, 255) },
+            { Vec3(0.5f, -0.5f, 0.0f), TVec4<uint8_t>(0, 0, 255, 255) },
+        };
+
+        SDL_GPUBufferCreateInfo vb_info{};
+        vb_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+        vb_info.size = (uint32_t)sizeof(vertices);
+
+        m_vertex_buffer = std::make_unique<GpuBuffer>(*m_gpu_device, vb_info);
+
+        SDL_GPUTransferBufferCreateInfo tb_info{};
+        tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+        tb_info.size = (uint32_t)sizeof(vertices);
+
+        GpuTransferBuffer upload_buffer(*m_gpu_device, tb_info);
+
+        Vertex* ptr = (Vertex*)upload_buffer.Map(false);
+        if (ptr)
+        {
+            ptr[0] = vertices[0];
+            ptr[1] = vertices[1];
+            ptr[2] = vertices[2];
+
+            upload_buffer.Unmap();
+        }
+
+        GpuCmdBuffer cmd(*m_gpu_device);
+        GpuCopyPass copy_pass(cmd);
+        if (copy_pass.BeginCopyPass())
+        {
+            SDL_GPUTransferBufferLocation source_buffer{};
+            source_buffer.transfer_buffer = upload_buffer.Get();
+            source_buffer.offset = 0;
+
+            SDL_GPUBufferRegion target_buffer{};
+            target_buffer.buffer = m_vertex_buffer->Get();
+            target_buffer.offset = 0;
+            target_buffer.size = sizeof(vertices);
+
+            copy_pass.UploadToGPUBuffer(source_buffer, target_buffer, false);
+
+            copy_pass.EndCopyPass();
+        }
+
+        cmd.Submit();
+    }
+
     return 0;
 }
 
 void App::Exit()
 {
+    m_vertex_buffer.reset();
     m_gfx_pipeline.reset();
 
     m_vert_shader.reset();
@@ -196,6 +270,11 @@ void App::Render()
 
             render_pass.SetScissor(SDL_Rect{ 0, 0, 1920, 1080 });
             render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1920.0f, 1080.0f, 0.0f, 1.0f });
+
+            SDL_GPUBufferBinding vertex_buffer_bindings[1] = {};
+            vertex_buffer_bindings[0].buffer = m_vertex_buffer->Get();
+            vertex_buffer_bindings[0].offset = 0;
+            render_pass.BindVertexBuffers(0, vertex_buffer_bindings);
 
             render_pass.Draw(3, 1, 0, 0);
 
