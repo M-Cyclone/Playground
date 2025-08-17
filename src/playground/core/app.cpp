@@ -2,6 +2,9 @@
 
 #include "playground/utils/file_loader.h"
 
+#include "triangle_vert.h"
+#include "triangle_frag.h"
+
 App::App()
 {
     if (!SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
@@ -74,14 +77,39 @@ int32_t App::Init()
         return -1;
     }
 
-    m_gpu_device = std::make_unique<GpuDevice>(
-        SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXIL | SDL_GPU_SHADERFORMAT_MSL,
-        nullptr
-    );
+    m_gpu_device = std::make_unique<GpuDevice>(SDL_GPU_SHADERFORMAT_DXIL, nullptr);
     m_gpu_device->ClaimWindow(m_window.get());
 
-    m_vert_shader = LoadShader(*m_gpu_device, "triangle.vert", 0, 0, 0, 0);
-    m_frag_shader = LoadShader(*m_gpu_device, "triangle.frag", 0, 0, 0, 0);
+    {
+        {
+            SDL_GPUShaderCreateInfo shader_info{};
+            shader_info.code_size = sizeof(TRIANGLE_VERT);
+            shader_info.code = TRIANGLE_VERT;
+            shader_info.entrypoint = "main";
+            shader_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+            shader_info.stage = SDL_GPU_SHADERSTAGE_VERTEX;
+            shader_info.num_samplers = 0;
+            shader_info.num_storage_textures = 0;
+            shader_info.num_storage_buffers = 0;
+            shader_info.num_uniform_buffers = 0;
+
+            m_vert_shader = std::make_unique<GpuShader>(*m_gpu_device, shader_info);
+        }
+        {
+            SDL_GPUShaderCreateInfo shader_info{};
+            shader_info.code_size = sizeof(TRIANGLE_FRAG);
+            shader_info.code = TRIANGLE_FRAG;
+            shader_info.entrypoint = "main";
+            shader_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+            shader_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
+            shader_info.num_samplers = 0;
+            shader_info.num_storage_textures = 0;
+            shader_info.num_storage_buffers = 0;
+            shader_info.num_uniform_buffers = 0;
+
+            m_frag_shader = std::make_unique<GpuShader>(*m_gpu_device, shader_info);
+        }
+    }
 
     {
         SDL_GPUColorTargetDescription color_descs[1] = {};
@@ -129,6 +157,8 @@ int32_t App::Init()
 
 void App::Exit()
 {
+    m_gfx_pipeline.reset();
+
     m_vert_shader.reset();
     m_frag_shader.reset();
 

@@ -1,0 +1,40 @@
+set(TARGET_NAME "${SHADER_COMPILE_TARGET}")
+
+file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS
+    "${SHADER_ROOT_DIR}/src/*.vert"
+    "${SHADER_ROOT_DIR}/src/*.frag"
+    "${SHADER_ROOT_DIR}/src/*.comp"
+)
+
+SOURCE_GROUP("shaders" FILES
+    ${SHADER_FILES}
+)
+
+set(SHADER_INCLUDE_FOLDER ${SHADER_ROOT_DIR}/include)
+
+set(GENERATED_SHADER_FOLDER "generated")
+
+if(NOT EXISTS ${SHADER_ROOT_DIR}/${GENERATED_SHADER_FOLDER})
+    file(MAKE_DIRECTORY ${SHADER_ROOT_DIR}/${GENERATED_SHADER_FOLDER})
+endif()
+
+if(NOT EXISTS ${SHADER_ROOT_DIR}/${GENERATED_SHADER_FOLDER}/dxil)
+    file(MAKE_DIRECTORY ${SHADER_ROOT_DIR}/${GENERATED_SHADER_FOLDER}/dxil)
+endif()
+
+if(NOT EXISTS ${SHADER_ROOT_DIR}/${GENERATED_SHADER_FOLDER}/cpp)
+    file(MAKE_DIRECTORY ${SHADER_ROOT_DIR}/${GENERATED_SHADER_FOLDER}/cpp)
+endif()
+
+include(${SHADER_ROOT_DIR}/cmake/shader_compile.cmake)
+
+compile_shader(
+    "${SHADER_FILES}"
+    "${TARGET_NAME}"
+    "${SHADER_INCLUDE_FOLDER}"
+    "${GENERATED_SHADER_FOLDER}"
+    "${PROJECT_ROOT_DIR}/external/dxc/dxc.exe"
+)
+
+set_target_properties("${TARGET_NAME}" PROPERTIES FOLDER "shaders")
+
