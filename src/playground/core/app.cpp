@@ -83,6 +83,47 @@ int32_t App::Init()
     m_vert_shader = LoadShader(*m_gpu_device, "triangle.vert", 0, 0, 0, 0);
     m_frag_shader = LoadShader(*m_gpu_device, "triangle.frag", 0, 0, 0, 0);
 
+    {
+        SDL_GPUColorTargetDescription color_descs[1] = {};
+        color_descs[0].format = m_gpu_device->GetSwapchainTextureFormat(m_window.get());
+
+        SDL_GPUGraphicsPipelineCreateInfo create_info =
+        {
+            .vertex_shader = m_vert_shader->Get(),
+            .fragment_shader = m_frag_shader->Get(),
+            .vertex_input_state =
+            {
+                .vertex_buffer_descriptions = nullptr,
+                .num_vertex_buffers = 0,
+                .vertex_attributes = nullptr,
+                .num_vertex_attributes = 0,
+            },
+            .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+            .rasterizer_state =
+            {
+                .fill_mode = SDL_GPU_FILLMODE_FILL,
+                .cull_mode = SDL_GPU_CULLMODE_BACK,
+                .front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
+                .depth_bias_constant_factor = 0.0f,
+                .depth_bias_clamp = 0.0f,
+                .depth_bias_slope_factor = 0.0f,
+                .enable_depth_bias = false,
+                .enable_depth_clip = false,
+            },
+            .multisample_state = {},
+            .depth_stencil_state = {},
+            .target_info =
+            {
+                .color_target_descriptions = color_descs,
+                .num_color_targets = 1,
+                .depth_stencil_format = {},
+                .has_depth_stencil_target = false,
+            },
+        };
+
+        m_gfx_pipeline = std::make_unique<GpuGraphicsPipeline>(*m_gpu_device, create_info);
+    }
+
     return 0;
 }
 
@@ -121,6 +162,13 @@ void App::Render()
         GpuRenderPass render_pass(cmd);
         if (render_pass.BeginRenderPass(color_targets, nullptr))
         {
+            render_pass.BindGraphicsPipeline(*m_gfx_pipeline);
+
+            render_pass.SetScissor(SDL_Rect{ 0, 0, 1920, 1080 });
+            render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1920.0f, 1080.0f, 0.0f, 1.0f });
+
+            render_pass.Draw(3, 1, 0, 0);
+
             render_pass.EndRenderPass();
         }
     }

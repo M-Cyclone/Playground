@@ -37,4 +37,6 @@ private:
 private:
     std::unique_ptr<GpuShader> m_vert_shader;
     std::unique_ptr<GpuShader> m_frag_shader;
+
+    std::unique_ptr<GpuGraphicsPipeline> m_gfx_pipeline;
 };
