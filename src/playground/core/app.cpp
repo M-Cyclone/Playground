@@ -4,11 +4,13 @@
 
 #include "triangle_vert.h"
 #include "triangle_frag.h"
+#include "render_to_swapchain_vert.h"
+#include "render_to_swapchain_frag.h"
 
 struct Vertex
 {
-    Vec3 position;
-    TVec4<uint8_t> color;
+    Vec2 position;
+    Vec2 uv;
 };
 
 App::App()
@@ -76,7 +78,7 @@ int32_t App::Run()
 
 int32_t App::Init()
 {
-    m_window.reset(SDL_CreateWindow("Misaka Playground - FPS(0)", 1920, 1080, 0));
+    m_window.reset(SDL_CreateWindow("Misaka Playground - FPS(0)", 1024, 1024, 0));
     if (!m_window)
     {
         SDL_LogError(SDL_LOG_PRIORITY_CRITICAL, "Window creation failed: %s", SDL_GetError());
@@ -87,60 +89,44 @@ int32_t App::Init()
     m_gpu_device->ClaimWindow(m_window.get());
 
     {
-        {
-            SDL_GPUShaderCreateInfo shader_info{};
-            shader_info.code_size = sizeof(TRIANGLE_VERT);
-            shader_info.code = TRIANGLE_VERT;
-            shader_info.entrypoint = "main";
-            shader_info.format = SDL_GPU_SHADERFORMAT_DXIL;
-            shader_info.stage = SDL_GPU_SHADERSTAGE_VERTEX;
-            shader_info.num_samplers = 0;
-            shader_info.num_storage_textures = 0;
-            shader_info.num_storage_buffers = 0;
-            shader_info.num_uniform_buffers = 0;
+        SDL_GPUShaderCreateInfo vs_info{};
+        vs_info.code_size = sizeof(TRIANGLE_VERT);
+        vs_info.code = TRIANGLE_VERT;
+        vs_info.entrypoint = "main";
+        vs_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+        vs_info.stage = SDL_GPU_SHADERSTAGE_VERTEX;
 
-            m_vert_shader = std::make_unique<GpuShader>(*m_gpu_device, shader_info);
-        }
-        {
-            SDL_GPUShaderCreateInfo shader_info{};
-            shader_info.code_size = sizeof(TRIANGLE_FRAG);
-            shader_info.code = TRIANGLE_FRAG;
-            shader_info.entrypoint = "main";
-            shader_info.format = SDL_GPU_SHADERFORMAT_DXIL;
-            shader_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-            shader_info.num_samplers = 0;
-            shader_info.num_storage_textures = 0;
-            shader_info.num_storage_buffers = 0;
-            shader_info.num_uniform_buffers = 0;
+        GpuShader vert_shader(*m_gpu_device, vs_info);
 
-            m_frag_shader = std::make_unique<GpuShader>(*m_gpu_device, shader_info);
-        }
-    }
+        SDL_GPUShaderCreateInfo ps_info{};
+        ps_info.code_size = sizeof(TRIANGLE_FRAG);
+        ps_info.code = TRIANGLE_FRAG;
+        ps_info.entrypoint = "main";
+        ps_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+        ps_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
 
-    {
+        GpuShader frag_shader(*m_gpu_device, ps_info);
+
+
         SDL_GPUColorTargetDescription color_descs[1] = {};
-        color_descs[0].format = m_gpu_device->GetSwapchainTextureFormat(m_window.get());
+        color_descs->format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
 
         SDL_GPUVertexBufferDescription vertex_buffer_descs[1] = {};
         vertex_buffer_descs[0].slot = 0;
-        vertex_buffer_descs[0].pitch = sizeof(Vertex);
+        vertex_buffer_descs[0].pitch = sizeof(Vec2);
         vertex_buffer_descs[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
         vertex_buffer_descs[0].instance_step_rate = 0;
 
-        SDL_GPUVertexAttribute vertex_attributes[2] = {};
+        SDL_GPUVertexAttribute vertex_attributes[1] = {};
         vertex_attributes[0].location = 0;
         vertex_attributes[0].buffer_slot = 0;
-        vertex_attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-        vertex_attributes[0].offset = offsetof(Vertex, position);
-        vertex_attributes[1].location = 1;
-        vertex_attributes[1].buffer_slot = 0;
-        vertex_attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_UBYTE4_NORM;
-        vertex_attributes[1].offset = offsetof(Vertex, color);
+        vertex_attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        vertex_attributes[0].offset = 0;
 
         SDL_GPUGraphicsPipelineCreateInfo create_info =
         {
-            .vertex_shader = m_vert_shader->Get(),
-            .fragment_shader = m_frag_shader->Get(),
+            .vertex_shader = vert_shader.Get(),
+            .fragment_shader = frag_shader.Get(),
             .vertex_input_state =
             {
                 .vertex_buffer_descriptions = vertex_buffer_descs,
@@ -171,36 +157,116 @@ int32_t App::Init()
             },
         };
 
-        m_gfx_pipeline = std::make_unique<GpuGraphicsPipeline>(*m_gpu_device, create_info);
+        m_triangle_pipeline = std::make_unique<GpuGraphicsPipeline>(*m_gpu_device, create_info);
     }
 
     {
-        Vertex vertices[] =
+        SDL_GPUShaderCreateInfo vs_info{};
+        vs_info.code_size = sizeof(RENDER_TO_SWAPCHAIN_VERT);
+        vs_info.code = RENDER_TO_SWAPCHAIN_VERT;
+        vs_info.entrypoint = "main";
+        vs_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+        vs_info.stage = SDL_GPU_SHADERSTAGE_VERTEX;
+        vs_info.num_samplers = 0;
+        vs_info.num_storage_textures = 0;
+        vs_info.num_storage_buffers = 0;
+        vs_info.num_uniform_buffers = 0;
+
+        GpuShader vert_shader(*m_gpu_device, vs_info);
+
+        SDL_GPUShaderCreateInfo ps_info{};
+        ps_info.code_size = sizeof(RENDER_TO_SWAPCHAIN_FRAG);
+        ps_info.code = RENDER_TO_SWAPCHAIN_FRAG;
+        ps_info.entrypoint = "main";
+        ps_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+        ps_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
+        ps_info.num_samplers = 1;
+        ps_info.num_storage_textures = 0;
+        ps_info.num_storage_buffers = 0;
+        ps_info.num_uniform_buffers = 0;
+
+        GpuShader frag_shader(*m_gpu_device, ps_info);
+
+
+        SDL_GPUColorTargetDescription color_descs[1] = {};
+        color_descs[0].format = m_gpu_device->GetSwapchainTextureFormat(m_window.get());
+
+        SDL_GPUVertexBufferDescription vertex_buffer_descs[1] = {};
+        vertex_buffer_descs[0].slot = 0;
+        vertex_buffer_descs[0].pitch = sizeof(Vertex);
+        vertex_buffer_descs[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
+        vertex_buffer_descs[0].instance_step_rate = 0;
+
+        SDL_GPUVertexAttribute vertex_attributes[2] = {};
+        vertex_attributes[0].location = 0;
+        vertex_attributes[0].buffer_slot = 0;
+        vertex_attributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        vertex_attributes[0].offset = offsetof(Vertex, position);
+        vertex_attributes[1].location = 1;
+        vertex_attributes[1].buffer_slot = 0;
+        vertex_attributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+        vertex_attributes[1].offset = offsetof(Vertex, uv);
+
+        SDL_GPUGraphicsPipelineCreateInfo create_info =
         {
-            { Vec3(0.0f, 0.5f, 0.0f), TVec4<uint8_t>(255, 0, 0, 255) },
-            { Vec3(-0.5f, -0.5f, 0.0f), TVec4<uint8_t>(0, 255, 0, 255) },
-            { Vec3(0.5f, -0.5f, 0.0f), TVec4<uint8_t>(0, 0, 255, 255) },
+            .vertex_shader = vert_shader.Get(),
+            .fragment_shader = frag_shader.Get(),
+            .vertex_input_state =
+            {
+                .vertex_buffer_descriptions = vertex_buffer_descs,
+                .num_vertex_buffers = (uint32_t)std::size(vertex_buffer_descs),
+                .vertex_attributes = vertex_attributes,
+                .num_vertex_attributes = (uint32_t)std::size(vertex_attributes),
+            },
+            .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+            .rasterizer_state =
+            {
+                .fill_mode = SDL_GPU_FILLMODE_FILL,
+                .cull_mode = SDL_GPU_CULLMODE_BACK,
+                .front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
+                .depth_bias_constant_factor = 0.0f,
+                .depth_bias_clamp = 0.0f,
+                .depth_bias_slope_factor = 0.0f,
+                .enable_depth_bias = false,
+                .enable_depth_clip = false,
+            },
+            .multisample_state = {},
+            .depth_stencil_state = {},
+            .target_info =
+            {
+                .color_target_descriptions = color_descs,
+                .num_color_targets = (uint32_t)std::size(color_descs),
+                .depth_stencil_format = {},
+                .has_depth_stencil_target = false,
+            },
+        };
+
+        m_to_swapchain_pipeline = std::make_unique<GpuGraphicsPipeline>(*m_gpu_device, create_info);
+    }
+
+    {
+        const Vec2 vertices[] =
+        {
+            Vec2(-0.5f, -0.5f),
+            Vec2(+0.5f, -0.5f),
+            Vec2(+0.0f, +0.5f)
         };
 
         SDL_GPUBufferCreateInfo vb_info{};
         vb_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
         vb_info.size = (uint32_t)sizeof(vertices);
 
-        m_vertex_buffer = std::make_unique<GpuBuffer>(*m_gpu_device, vb_info);
+        m_triangle_vertex_buffer = std::make_unique<GpuBuffer>(*m_gpu_device, vb_info);
 
         SDL_GPUTransferBufferCreateInfo tb_info{};
         tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
         tb_info.size = (uint32_t)sizeof(vertices);
 
         GpuTransferBuffer upload_buffer(*m_gpu_device, tb_info);
-
-        Vertex* ptr = (Vertex*)upload_buffer.Map(false);
+        Vec2* ptr = (Vec2*)upload_buffer.Map(false);
         if (ptr)
         {
-            ptr[0] = vertices[0];
-            ptr[1] = vertices[1];
-            ptr[2] = vertices[2];
-
+            std::memcpy(ptr, vertices, sizeof(vertices));
             upload_buffer.Unmap();
         }
 
@@ -213,7 +279,7 @@ int32_t App::Init()
             source_buffer.offset = 0;
 
             SDL_GPUBufferRegion target_buffer{};
-            target_buffer.buffer = m_vertex_buffer->Get();
+            target_buffer.buffer = m_triangle_vertex_buffer->Get();
             target_buffer.offset = 0;
             target_buffer.size = sizeof(vertices);
 
@@ -225,16 +291,146 @@ int32_t App::Init()
         cmd.Submit();
     }
 
+    {
+        {
+            const Vertex vertices[] =
+            {
+                { Vec2(-1.0f, -1.0f), Vec2(0.0f, 0.0f) },
+                { Vec2(-1.0f, +1.0f), Vec2(0.0f, 1.0f) },
+                { Vec2(+1.0f, +1.0f), Vec2(1.0f, 1.0f) },
+                { Vec2(+1.0f, -1.0f), Vec2(1.0f, 0.0f) },
+            };
+
+            SDL_GPUBufferCreateInfo vb_info{};
+            vb_info.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+            vb_info.size = (uint32_t)sizeof(vertices);
+
+            m_vertex_buffer = std::make_unique<GpuBuffer>(*m_gpu_device, vb_info);
+
+            SDL_GPUTransferBufferCreateInfo tb_info{};
+            tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+            tb_info.size = (uint32_t)sizeof(vertices);
+
+            GpuTransferBuffer upload_buffer(*m_gpu_device, tb_info);
+
+            Vertex* ptr = (Vertex*)upload_buffer.Map(false);
+            if (ptr)
+            {
+                std::memcpy(ptr, vertices, sizeof(vertices));
+
+                upload_buffer.Unmap();
+            }
+
+            GpuCmdBuffer cmd(*m_gpu_device);
+            GpuCopyPass copy_pass(cmd);
+            if (copy_pass.BeginCopyPass())
+            {
+                SDL_GPUTransferBufferLocation source_buffer{};
+                source_buffer.transfer_buffer = upload_buffer.Get();
+                source_buffer.offset = 0;
+
+                SDL_GPUBufferRegion target_buffer{};
+                target_buffer.buffer = m_vertex_buffer->Get();
+                target_buffer.offset = 0;
+                target_buffer.size = sizeof(vertices);
+
+                copy_pass.UploadToGPUBuffer(source_buffer, target_buffer, false);
+
+                copy_pass.EndCopyPass();
+            }
+
+            cmd.Submit();
+        }
+
+        {
+            const int16_t indices[] =
+            {
+                0, 2, 1,
+                0, 3, 2
+            };
+
+            SDL_GPUBufferCreateInfo ib_info{};
+            ib_info.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+            ib_info.size = (uint32_t)sizeof(indices);
+
+            m_index_buffer = std::make_unique<GpuBuffer>(*m_gpu_device, ib_info);
+
+            SDL_GPUTransferBufferCreateInfo tb_info{};
+            tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+            tb_info.size = (uint32_t)sizeof(indices);
+
+            GpuTransferBuffer upload_buffer(*m_gpu_device, tb_info);
+
+            int16_t* ptr = (int16_t*)upload_buffer.Map(false);
+            if (ptr)
+            {
+                std::memcpy(ptr, indices, sizeof(indices));
+
+                upload_buffer.Unmap();
+            }
+
+            GpuCmdBuffer cmd(*m_gpu_device);
+            GpuCopyPass copy_pass(cmd);
+            if (copy_pass.BeginCopyPass())
+            {
+                SDL_GPUTransferBufferLocation source_buffer{};
+                source_buffer.transfer_buffer = upload_buffer.Get();
+                source_buffer.offset = 0;
+
+                SDL_GPUBufferRegion target_buffer{};
+                target_buffer.buffer = m_index_buffer->Get();
+                target_buffer.offset = 0;
+                target_buffer.size = sizeof(indices);
+
+                copy_pass.UploadToGPUBuffer(source_buffer, target_buffer, false);
+
+                copy_pass.EndCopyPass();
+            }
+
+            cmd.Submit();
+        }
+    }
+
+    {
+        SDL_GPUSamplerCreateInfo create_info{};
+        create_info.min_filter = SDL_GPU_FILTER_LINEAR;
+        create_info.mag_filter = SDL_GPU_FILTER_LINEAR;
+        create_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
+        create_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+        create_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+        create_info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+
+        m_sampler = std::make_unique<GpuSampler>(*m_gpu_device, create_info);
+    }
+
+    {
+        SDL_GPUTextureCreateInfo texture_info{};
+        texture_info.type = SDL_GPU_TEXTURETYPE_2D;
+        texture_info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
+        texture_info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
+        texture_info.width = 1024;
+        texture_info.height = 1024;
+        texture_info.layer_count_or_depth = 1;
+        texture_info.num_levels = 1;
+        texture_info.sample_count = SDL_GPU_SAMPLECOUNT_1;
+
+        m_texture = std::make_unique<GpuTexture>(*m_gpu_device, texture_info);
+    }
+
     return 0;
 }
 
 void App::Exit()
 {
-    m_vertex_buffer.reset();
-    m_gfx_pipeline.reset();
+    m_texture.reset();
+    m_sampler.reset();
 
-    m_vert_shader.reset();
-    m_frag_shader.reset();
+    m_vertex_buffer.reset();
+    m_index_buffer.reset();
+    m_triangle_vertex_buffer.reset();
+
+    m_triangle_pipeline.reset();
+    m_to_swapchain_pipeline.reset();
 
     m_gpu_device.reset();
     m_window.reset();
@@ -247,6 +443,34 @@ void App::Update(float delta_seconds)
 void App::Render()
 {
     GpuCmdBuffer cmd(*m_gpu_device);
+
+    {
+        // SDL's default clear value for rtv is (0, 0, 0, 0), so we set the clear color to black.
+        // If we don't do this, DX12 will complain about the clear color not matching the RTV's default clear value.
+        SDL_GPUColorTargetInfo color_targets[1] = {};
+        color_targets[0].texture = m_texture->Get();
+        color_targets[0].clear_color = SDL_FColor{ 0.0f, 0.0f, 0.0f, 0.0f };
+        color_targets[0].load_op = SDL_GPU_LOADOP_CLEAR;
+        color_targets[0].store_op = SDL_GPU_STOREOP_STORE;
+
+        GpuRenderPass render_pass(cmd);
+        if (render_pass.BeginRenderPass(color_targets, nullptr))
+        {
+            render_pass.BindGraphicsPipeline(*m_triangle_pipeline);
+
+            render_pass.SetScissor(SDL_Rect{ 0, 0, 1024, 1024 });
+            render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f });
+
+            SDL_GPUBufferBinding vertex_buffer_bindings[1] = {};
+            vertex_buffer_bindings[0].buffer = m_triangle_vertex_buffer->Get();
+            vertex_buffer_bindings[0].offset = 0;
+            render_pass.BindVertexBuffers(0, vertex_buffer_bindings);
+
+            render_pass.Draw(3, 1, 0, 0);
+
+            render_pass.EndRenderPass();
+        }
+    }
 
     SDL_GPUTexture* swapchain_texture = nullptr;
     if (!cmd.WaitAndAcquireSwapchainTexture(m_window.get(), swapchain_texture))
@@ -266,17 +490,27 @@ void App::Render()
         GpuRenderPass render_pass(cmd);
         if (render_pass.BeginRenderPass(color_targets, nullptr))
         {
-            render_pass.BindGraphicsPipeline(*m_gfx_pipeline);
+            render_pass.BindGraphicsPipeline(*m_to_swapchain_pipeline);
 
-            render_pass.SetScissor(SDL_Rect{ 0, 0, 1920, 1080 });
-            render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1920.0f, 1080.0f, 0.0f, 1.0f });
+            render_pass.SetScissor(SDL_Rect{ 0, 0, 1024, 1024 });
+            render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f });
 
             SDL_GPUBufferBinding vertex_buffer_bindings[1] = {};
             vertex_buffer_bindings[0].buffer = m_vertex_buffer->Get();
             vertex_buffer_bindings[0].offset = 0;
             render_pass.BindVertexBuffers(0, vertex_buffer_bindings);
 
-            render_pass.Draw(3, 1, 0, 0);
+            SDL_GPUBufferBinding index_buffer_binding = {};
+            index_buffer_binding.buffer = m_index_buffer->Get();
+            index_buffer_binding.offset = 0;
+            render_pass.BindIndexBuffer(index_buffer_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+
+            SDL_GPUTextureSamplerBinding sampler_bindings[1] = {};
+            sampler_bindings[0].texture = m_texture->Get();
+            sampler_bindings[0].sampler = m_sampler->Get();
+            render_pass.BindFragShaderSamplers(0, sampler_bindings);
+
+            render_pass.DrawIndexed(6, 1, 0, 0, 0);
 
             render_pass.EndRenderPass();
         }

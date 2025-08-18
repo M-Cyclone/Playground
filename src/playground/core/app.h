@@ -35,10 +35,15 @@ private:
     std::unique_ptr<GpuDevice> m_gpu_device;
 
 private:
-    std::unique_ptr<GpuShader> m_vert_shader;
-    std::unique_ptr<GpuShader> m_frag_shader;
+    std::unique_ptr<GpuGraphicsPipeline> m_triangle_pipeline;
+    std::unique_ptr<GpuGraphicsPipeline> m_to_swapchain_pipeline;
 
-    std::unique_ptr<GpuGraphicsPipeline> m_gfx_pipeline;
+    std::unique_ptr<GpuBuffer> m_triangle_vertex_buffer;
 
     std::unique_ptr<GpuBuffer> m_vertex_buffer;
+    std::unique_ptr<GpuBuffer> m_index_buffer;
+
+    std::unique_ptr<GpuSampler> m_sampler;
+
+    std::unique_ptr<GpuTexture> m_texture;
 };
