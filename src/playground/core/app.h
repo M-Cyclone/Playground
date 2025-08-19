@@ -35,10 +35,15 @@ private:
     std::unique_ptr<GpuDevice> m_gpu_device;
 
 private:
-    std::unique_ptr<GpuGraphicsPipeline> m_triangle_pipeline;
-    std::unique_ptr<GpuGraphicsPipeline> m_to_swapchain_pipeline;
+    struct GradientUniforms
+    {
+        float time = 0.0f;
+    };
+    GradientUniforms m_gu;
 
-    std::unique_ptr<GpuBuffer> m_triangle_vertex_buffer;
+    std::unique_ptr<GpuComputePipeline> m_ray_tracing_pipeline;
+
+    std::unique_ptr<GpuGraphicsPipeline> m_to_swapchain_pipeline;
 
     std::unique_ptr<GpuBuffer> m_vertex_buffer;
     std::unique_ptr<GpuBuffer> m_index_buffer;

@@ -33,6 +33,13 @@ function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR 
                 DEPENDS ${SHADER}
                 WORKING_DIRECTORY "${working_dir}"
             )
+        elseif(SHADER_EXT STREQUAL ".comp")
+            add_custom_command(
+                OUTPUT ${DXIL_FILE}
+                COMMAND ${DXC_BIN} -T cs_6_0 -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
+                DEPENDS ${SHADER}
+                WORKING_DIRECTORY "${working_dir}"
+            )
         endif()
 
         list(APPEND ALL_GENERATED_DXIL_FILES ${DXIL_FILE})
