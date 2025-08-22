@@ -7,8 +7,8 @@ import taichi.math as tm
 if __name__ == "__main__":
     ti.init(arch=ti.gpu)
 
-    IMG_WIDTH = 512
-    IMG_HEIGHT = 512
+    IMG_WIDTH = 1024
+    IMG_HEIGHT = 1024
 
     sphere = Sphere(center=ti.Vector([0, 0, 0]), radius=1)
 
@@ -26,12 +26,18 @@ if __name__ == "__main__":
 
             (is_hit, _, _, hit_point_normal) = sphere.intersect(ray=ray)
 
-            if is_hit:
-                color = hit_point_normal * 0.5 + 0.5
-            else:
-                a = 0.5 * (ray.dir[1] + 1.0)
-                color = (1.0 - a) * ti.Vector([1.0, 1.0, 1.0]) + a * ti.Vector([0.5, 0.7, 1.0])
+            alpha = 0.5 * (ray.dir[1] + 1.0)
 
+            top_color = ti.Vector([0.5, 0.7, 1.0])
+            bot_color = ti.Vector([1.0, 1.0, 1.0])
+
+            color = (
+                (hit_point_normal * 0.5 + 0.5)
+                if is_hit
+                else ((1.0 - alpha) * bot_color + alpha * top_color)
+            )
+
+            # Flip the vertical image.
             canvas[u, IMG_HEIGHT - v - 1] = color
 
     while gui.running:
