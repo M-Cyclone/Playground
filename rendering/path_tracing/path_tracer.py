@@ -13,7 +13,7 @@ if __name__ == "__main__":
     sphere = Sphere(center=ti.Vector([0, 0, 0]), radius=1)
 
     camera = Camera(w=IMG_WIDTH, h=IMG_HEIGHT, fov=tm.pi)
-    camera.update(camera_pos=ti.Vector([0, 0, -5]), target_pos=sphere.center)
+    camera.update(camera_pos=ti.Vector([0, 0, -5]), target_pos=ti.Vector([0, 0, 0]))
 
     gui = ti.GUI("Ray Tracing", res=(IMG_WIDTH, IMG_HEIGHT))
     canvas = ti.Vector.field(3, dtype=ti.f32, shape=(IMG_WIDTH, IMG_HEIGHT))
@@ -27,7 +27,12 @@ if __name__ == "__main__":
             (is_hit, _, _, hit_point_normal) = sphere.intersect(ray=ray)
 
             if is_hit:
-                canvas[u, v] = hit_point_normal * 0.5 + 0.5
+                color = hit_point_normal * 0.5 + 0.5
+            else:
+                a = 0.5 * (ray.dir[1] + 1.0)
+                color = (1.0 - a) * ti.Vector([1.0, 1.0, 1.0]) + a * ti.Vector([0.5, 0.7, 1.0])
+
+            canvas[u, IMG_HEIGHT - v - 1] = color
 
     while gui.running:
         render()
