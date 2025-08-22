@@ -12,13 +12,8 @@ if __name__ == "__main__":
 
     sphere = Sphere(center=ti.Vector([0, 0, 0]), radius=1)
 
-    camera = Camera(
-        w=IMG_WIDTH,
-        h=IMG_HEIGHT,
-        fov=tm.pi,
-        camera_pos=ti.Vector([0, 0, 5]),
-        target_pos=sphere.center,
-    )
+    camera = Camera(w=IMG_WIDTH, h=IMG_HEIGHT, fov=tm.pi)
+    camera.update(camera_pos=ti.Vector([0, 0, -5]), target_pos=sphere.center)
 
     gui = ti.GUI("Ray Tracing", res=(IMG_WIDTH, IMG_HEIGHT))
     canvas = ti.Vector.field(3, dtype=ti.f32, shape=(IMG_WIDTH, IMG_HEIGHT))

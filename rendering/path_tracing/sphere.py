@@ -22,7 +22,7 @@ class Sphere:
         """
         Used for get intersection from a ray to this sphere.
         """
-        oc = self.center - ray.dir
+        oc = self.center - ray.origin
 
         a = tm.dot(ray.dir, ray.dir)
         b = -2 * tm.dot(ray.dir, oc)
