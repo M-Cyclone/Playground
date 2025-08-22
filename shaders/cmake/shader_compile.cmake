@@ -22,21 +22,21 @@ function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR 
         if(SHADER_EXT STREQUAL ".vert")
             add_custom_command(
                 OUTPUT ${DXIL_FILE}
-                COMMAND ${DXC_BIN} -T vs_6_0 -O0 -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
+                COMMAND ${DXC_BIN} -T vs_6_0 -Od -WX -Zi -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
                 DEPENDS ${SHADER}
                 WORKING_DIRECTORY "${working_dir}"
             )
         elseif(SHADER_EXT STREQUAL ".frag")
             add_custom_command(
                 OUTPUT ${DXIL_FILE}
-                COMMAND ${DXC_BIN} -T ps_6_0 -O0 -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
+                COMMAND ${DXC_BIN} -T ps_6_0 -Od -WX -Zi -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
                 DEPENDS ${SHADER}
                 WORKING_DIRECTORY "${working_dir}"
             )
         elseif(SHADER_EXT STREQUAL ".comp")
             add_custom_command(
                 OUTPUT ${DXIL_FILE}
-                COMMAND ${DXC_BIN} -T cs_6_0 -O0 -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
+                COMMAND ${DXC_BIN} -T cs_6_0 -Od -WX -Zi -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${DXIL_FILE}
                 DEPENDS ${SHADER}
                 WORKING_DIRECTORY "${working_dir}"
             )
