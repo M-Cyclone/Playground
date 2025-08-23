@@ -25,10 +25,10 @@ class Sphere:
         oc = self.center - ray.origin
 
         a = tm.dot(ray.dir, ray.dir)
-        b = -2 * tm.dot(ray.dir, oc)
+        h = tm.dot(ray.dir, oc)
         c = tm.dot(oc, oc) - self.radius * self.radius
 
-        discriminant = b * b - 4 * a * c
+        discriminant = h * h - a * c
 
         is_hit = False
         hit_time = 0.0
@@ -37,10 +37,10 @@ class Sphere:
 
         if discriminant > 0:
             sqrtd = ti.sqrt(discriminant)
-            hit_time = (-b - sqrtd) / (2 * a)
+            hit_time = (h - sqrtd) / a
 
             if hit_time < t_min or hit_time > t_max:
-                hit_time = (-b + sqrtd) / (2 * a)
+                hit_time = (h + sqrtd) / a
 
             if t_min <= hit_time <= t_max:
                 is_hit = True
