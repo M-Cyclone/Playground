@@ -25,7 +25,6 @@ add_executable(${TARGET_NAME}
 )
 target_include_directories(${TARGET_NAME}
     PUBLIC ${PROJECT_ROOT_DIR}/src
-    PUBLIC ${PROJECT_ROOT_DIR}/shaders/include
     PUBLIC ${PROJECT_ROOT_DIR}/shaders/generated/cpp
 )
 target_link_libraries(${TARGET_NAME}
@@ -43,10 +42,10 @@ add_custom_command(
     TARGET ${TARGET_NAME}
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:SDL3::SDL3-shared>" "$<TARGET_FILE_DIR:${TARGET_NAME}>"
-    COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_PDB_FILE:SDL3::SDL3-shared>" "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+    COMMAND $<$<NOT:$<CONFIG:Release>>:${CMAKE_COMMAND}> 
+            $<$<NOT:$<CONFIG:Release>>:-E> 
+            $<$<NOT:$<CONFIG:Release>>:copy> "$<TARGET_PDB_FILE:SDL3::SDL3-shared>" "$<TARGET_FILE_DIR:${TARGET_NAME}>"
     VERBATIM
 )
 
 group_sources(${TARGET_NAME} ${PROJECT_ROOT_DIR})
-
-set_property(TARGET ${TARGET_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${PROJECT_ROOT_DIR}/")

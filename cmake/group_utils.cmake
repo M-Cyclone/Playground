@@ -8,7 +8,3 @@ function(group_sources TARGET_NAME ROOT_DIR)
         source_group(${SOURCE_PATH} FILES ${SOURCE_FILE})
     endforeach()
 endfunction()
-
-macro(set_solution_folder target folder)
-    set_target_properties(${target} PROPERTIES FOLDER "${folder}")
-endmacro()

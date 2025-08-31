@@ -16,18 +16,6 @@ include(${PROJECT_ROOT_DIR}/cmake/group_utils.cmake)
 set(SDL_TEST_LIBRARY OFF)
 add_subdirectory(${PROJECT_ROOT_DIR}/external/SDL)
 
-if(TARGET SDL3)
-    set_solution_folder(SDL3 "external/SDL3")
-endif()
-
-if(TARGET SDL3-shared)
-    set_solution_folder(SDL3-shared "external/SDL3")
-endif()
-
-if(TARGET SDL_uclibc)
-    set_solution_folder(SDL_uclibc "external/SDL3")
-endif()
-
 set(SHADER_COMPILE_TARGET shader-compile)
 add_subdirectory(${SHADER_ROOT_DIR})
 

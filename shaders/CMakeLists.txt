@@ -37,4 +37,3 @@ compile_shader(
 )
 
 set_target_properties("${TARGET_NAME}" PROPERTIES FOLDER "shaders")
-

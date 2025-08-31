@@ -5,6 +5,7 @@
 #include "ray_tracing_comp.h"
 #include "render_to_swapchain_vert.h"
 #include "render_to_swapchain_frag.h"
+#include "smoke_2d_comp.h"
 
 struct Vertex
 {
