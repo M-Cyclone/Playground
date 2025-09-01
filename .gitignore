@@ -1,19 +1,105 @@
-CMakeLists.txt.user
-CMakeCache.txt
-CMakeFiles
-CMakeScripts
-Testing
-Makefile
-cmake_install.cmake
-install_manifest.txt
-compile_commands.json
-CTestTestfile.cmake
-_deps
-CMakeUserPresets.json
+#OS junk files
+[Tt]humbs.db
+*.DS_Store
 
-# CLion
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#cmake-build-*
+#Output Linux Installer
+Installers/Linux/tmp_deb/
+Installers/Linux/tmp_run/
+*.run
+*.deb
+
+#Visual Studio files
+*.pidb
+*.userprefs
+*.[Oo]bj
+*.exe
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.sdf
+*.csproj.csdat
+ipch/
+obj/
+[Bb]in
+[Dd]ebug*/
+[Rr]elease*/
+Ankh.NoLoad
+.vs/
+project.lock.json
+/MonoGame.Framework/MonoGame.Framework.Net.WindowsUniversal.project.lock.json
+/MonoGame.Framework/MonoGame.Framework.WindowsUniversal.project.lock.json
+artifacts/
+Artifacts/
+
+# JetBrains Rider
+.idea/
+
+#Tooling
+_ReSharper*/
+*.resharper
+[Tt]est[Rr]esult*
+
+#Visual Studio Rebracer extension, allows the user to automatically change the style configuration by project
+rebracer.xml
+
+#Subversion files
+.svn
+
+# Office Temp Files
+~$*
+
+#monodroid private beta
+monodroid*.msi
+
+#Unix temporary files
+*~
+
+# Output docs
+Documentation/Output/
+
+#Mac Package Files
+*.pkg
+*.mpack
+**/packages
+
+#Nuget Packages
+**/*.nupkg
+
+#Zip files
+*.zip
+
+Installers/MacOS/Scripts/Framework/postinstall
+IDE/MonoDevelop/MonoDevelop.MonoGame/templates/Common/MonoGame.Framework.dll.config
+
+# CAKE
+.cake/**
+
+# Xmake
+.xmake
+vsxmake2022
+
+# docfx
+_*
+
+# Premake generated files
+/native/**/*.sln
+/native/**/*.csproj
+/native/**/*.vcxproj
+/native/**/*.vcxproj.filters
+/native/**/*.make
+/native/**/Makefile
