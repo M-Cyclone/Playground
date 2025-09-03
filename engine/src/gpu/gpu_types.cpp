@@ -1,4 +1,4 @@
-#include "sdl_gpu_types.h"
+#include "engine/gpu/gpu_types.h"
 
 GpuDevice::GpuDevice(SDL_GPUShaderFormat format_flags, const char* backend_name)
     : m_device(SDL_CreateGPUDevice(format_flags, ENGINE_DEBUG, backend_name))

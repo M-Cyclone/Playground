@@ -5,17 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 file(GLOB_RECURSE PLAYGROUND_FILES CONFIGURE_DEPENDS
-    ${PLAYGROUND_ROOT_DIR}/core/**.h
-    ${PLAYGROUND_ROOT_DIR}/core/**.cpp
-
-    ${PLAYGROUND_ROOT_DIR}/system/**.h
-    ${PLAYGROUND_ROOT_DIR}/system/**.cpp
-
-    ${PLAYGROUND_ROOT_DIR}/utils/**.h
-    ${PLAYGROUND_ROOT_DIR}/utils/**.cpp
-
-    ${PROJECT_ROOT_DIR}/shaders/include/**.h
-    ${PROJECT_ROOT_DIR}/shaders/generated/cpp/**.h
+    ${PLAYGROUND_ROOT_DIR}/**.h
+    ${PLAYGROUND_ROOT_DIR}/**.cpp
 )
 
 source_group(TREE ${PLAYGROUND_ROOT_DIR} FILES PLAYGROUND_FILES)
@@ -24,7 +15,7 @@ add_executable(${TARGET_NAME}
     ${PLAYGROUND_FILES}
 )
 target_include_directories(${TARGET_NAME}
-    PUBLIC ${PROJECT_ROOT_DIR}/src
+    PUBLIC ${PLAYGROUND_ROOT_DIR}/include
     PUBLIC ${PROJECT_ROOT_DIR}/shaders/generated/cpp
 )
 target_link_libraries(${TARGET_NAME}
@@ -48,4 +39,4 @@ add_custom_command(
     VERBATIM
 )
 
-group_sources(${TARGET_NAME} ${PROJECT_ROOT_DIR})
+group_sources(${TARGET_NAME} ${PLAYGROUND_ROOT_DIR})

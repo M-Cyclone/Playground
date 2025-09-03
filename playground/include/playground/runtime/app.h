@@ -1,6 +1,6 @@
 #pragma once
 
-#include "engine/sdl_wrapper/sdl_gpu_types.h"
+#include "engine/gpu/gpu_types.h"
 
 #include <SDL3/SDL.h>
 
