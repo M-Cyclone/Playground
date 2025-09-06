@@ -1,11 +1,9 @@
 #include "playground/runtime/app.h"
 
-#include "engine/math/math.h"
+#include <engine/math/math.h>
 
-#include "ray_tracing_comp.h"
 #include "render_to_swapchain_vert.h"
 #include "render_to_swapchain_frag.h"
-#include "smoke_2d_comp.h"
 
 struct Vertex
 {
@@ -57,7 +55,7 @@ int32_t App::Run()
         const double delta_time_seconds = (double)delta_time_nanoseconds * 1e-9;
 
         Update((float)delta_time_seconds);
-        Render();
+        Render((float)delta_time_seconds);
 
         last_time_point = curr_time_point;
 
@@ -89,27 +87,6 @@ int32_t App::Init()
     m_gpu_device->ClaimWindow(m_window.get());
 
     {
-        SDL_GPUComputePipelineCreateInfo create_info
-        {
-            .code_size = sizeof(RAY_TRACING_COMP),
-            .code = RAY_TRACING_COMP,
-            .entrypoint = "main",
-            .format = SDL_GPU_SHADERFORMAT_DXIL,
-            .num_samplers = 0,
-            .num_readonly_storage_textures = 0,
-            .num_readonly_storage_buffers = 0,
-            .num_readwrite_storage_textures = 1,
-            .num_readwrite_storage_buffers = 0,
-            .num_uniform_buffers = 1,
-            .threadcount_x = 8,
-            .threadcount_y = 8,
-            .threadcount_z = 1,
-        };
-
-        m_ray_tracing_pipeline = std::make_unique<GpuComputePipeline>(*m_gpu_device, create_info);
-    }
-
-    {
         SDL_GPUShaderCreateInfo vs_info{};
         vs_info.code_size = sizeof(RENDER_TO_SWAPCHAIN_VERT);
         vs_info.code = RENDER_TO_SWAPCHAIN_VERT;
@@ -129,7 +106,7 @@ int32_t App::Init()
         ps_info.entrypoint = "main";
         ps_info.format = SDL_GPU_SHADERFORMAT_DXIL;
         ps_info.stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
-        ps_info.num_samplers = 1;
+        ps_info.num_samplers = 0;
         ps_info.num_storage_textures = 0;
         ps_info.num_storage_buffers = 0;
         ps_info.num_uniform_buffers = 0;
@@ -294,29 +271,8 @@ int32_t App::Init()
     }
 
     {
-        SDL_GPUSamplerCreateInfo create_info{};
-        create_info.min_filter = SDL_GPU_FILTER_LINEAR;
-        create_info.mag_filter = SDL_GPU_FILTER_LINEAR;
-        create_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
-        create_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-        create_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-        create_info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-
-        m_sampler = std::make_unique<GpuSampler>(*m_gpu_device, create_info);
-    }
-
-    {
-        SDL_GPUTextureCreateInfo texture_info{};
-        texture_info.type = SDL_GPU_TEXTURETYPE_2D;
-        texture_info.format = SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM;
-        texture_info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE;
-        texture_info.width = 1024;
-        texture_info.height = 1024;
-        texture_info.layer_count_or_depth = 1;
-        texture_info.num_levels = 1;
-        texture_info.sample_count = SDL_GPU_SAMPLECOUNT_1;
-
-        m_texture = std::make_unique<GpuTexture>(*m_gpu_device, texture_info);
+        m_fluid_solver = std::make_unique<FluidSolver2d>(*m_gpu_device, 10.0f);
+        m_fluid_solver->ApplyZeroInitializationCondition(*m_gpu_device);
     }
 
     return 0;
@@ -324,13 +280,11 @@ int32_t App::Init()
 
 void App::Exit()
 {
-    m_texture.reset();
-    m_sampler.reset();
+    m_fluid_solver.reset();
 
     m_vertex_buffer.reset();
     m_index_buffer.reset();
 
-    m_ray_tracing_pipeline.reset();
     m_to_swapchain_pipeline.reset();
 
     m_gpu_device.reset();
@@ -339,31 +293,14 @@ void App::Exit()
 
 void App::Update(float delta_seconds)
 {
-    m_gu.time += delta_seconds;
 }
 
-void App::Render()
+void App::Render(float delta_seconds)
 {
     GpuCmdBuffer cmd(*m_gpu_device);
 
     {
-        SDL_GPUStorageTextureReadWriteBinding read_write_bindings[1] = {};
-        read_write_bindings[0].texture = m_texture->Get();
-        read_write_bindings[0].mip_level = 0;
-        read_write_bindings[0].layer = 0;
-        read_write_bindings[0].cycle = true;
-
-        GpuComputePass compute_pass(cmd);
-        if (compute_pass.BeginComputePass(read_write_bindings, {}))
-        {
-            compute_pass.BindComputePipeline(*m_ray_tracing_pipeline);
-
-            cmd.PushCompShaderUniformData(0, &m_gu, sizeof(m_gu));
-
-            compute_pass.Dispatch(1024 / 8, 1024 / 8, 1);
-
-            compute_pass.EndComputePass();
-        }
+        m_fluid_solver->Tick(cmd, delta_seconds);
     }
 
     SDL_GPUTexture* swapchain_texture = nullptr;
@@ -375,38 +312,39 @@ void App::Render()
 
     if (swapchain_texture)
     {
-        SDL_GPUColorTargetInfo color_targets[1] = {};
-        color_targets[0].texture = swapchain_texture;
-        color_targets[0].clear_color = SDL_FColor{ 0.0f, 0.0f, 0.0f, 1.0f };
-        color_targets[0].load_op = SDL_GPU_LOADOP_CLEAR;
-        color_targets[0].store_op = SDL_GPU_STOREOP_STORE;
-
-        GpuRenderPass render_pass(cmd);
-        if (render_pass.BeginRenderPass(color_targets, nullptr))
         {
-            render_pass.BindGraphicsPipeline(*m_to_swapchain_pipeline);
+            m_fluid_solver->RenderPresureFieldToTexture(cmd, swapchain_texture);
+        }
 
-            render_pass.SetScissor(SDL_Rect{ 0, 0, 1024, 1024 });
-            render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f });
+        {
+            SDL_GPUColorTargetInfo color_targets[1] = {};
+            color_targets[0].texture = swapchain_texture;
+            color_targets[0].clear_color = SDL_FColor{ 0.0f, 0.0f, 0.0f, 1.0f };
+            color_targets[0].load_op = SDL_GPU_LOADOP_CLEAR;
+            color_targets[0].store_op = SDL_GPU_STOREOP_STORE;
 
-            SDL_GPUBufferBinding vertex_buffer_bindings[1] = {};
-            vertex_buffer_bindings[0].buffer = m_vertex_buffer->Get();
-            vertex_buffer_bindings[0].offset = 0;
-            render_pass.BindVertexBuffers(0, vertex_buffer_bindings);
+            GpuRenderPass render_pass(cmd);
+            if (render_pass.BeginRenderPass(color_targets, nullptr))
+            {
+                render_pass.BindGraphicsPipeline(*m_to_swapchain_pipeline);
 
-            SDL_GPUBufferBinding index_buffer_binding = {};
-            index_buffer_binding.buffer = m_index_buffer->Get();
-            index_buffer_binding.offset = 0;
-            render_pass.BindIndexBuffer(index_buffer_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+                render_pass.SetScissor(SDL_Rect{ 0, 0, 1024, 1024 });
+                render_pass.SetViewport(SDL_GPUViewport{ 0.0f, 0.0f, 1024.0f, 1024.0f, 0.0f, 1.0f });
 
-            SDL_GPUTextureSamplerBinding sampler_bindings[1] = {};
-            sampler_bindings[0].texture = m_texture->Get();
-            sampler_bindings[0].sampler = m_sampler->Get();
-            render_pass.BindFragShaderSamplers(0, sampler_bindings);
+                SDL_GPUBufferBinding vertex_buffer_bindings[1] = {};
+                vertex_buffer_bindings[0].buffer = m_vertex_buffer->Get();
+                vertex_buffer_bindings[0].offset = 0;
+                render_pass.BindVertexBuffers(0, vertex_buffer_bindings);
 
-            render_pass.DrawIndexed(6, 1, 0, 0, 0);
+                SDL_GPUBufferBinding index_buffer_binding = {};
+                index_buffer_binding.buffer = m_index_buffer->Get();
+                index_buffer_binding.offset = 0;
+                render_pass.BindIndexBuffer(index_buffer_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
-            render_pass.EndRenderPass();
+                render_pass.DrawIndexed(6, 1, 0, 0, 0);
+
+                render_pass.EndRenderPass();
+            }
         }
     }
 

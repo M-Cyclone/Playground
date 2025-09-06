@@ -1,0 +1,58 @@
+// For compute shader, register spaces are:
+// Sampler: space0
+// Texture: space0
+// ReadOnlyStorageTex: space0
+// ReadOnlyStorageBuf: space0
+// RWTex: space1
+// RWBuf: space1
+// Uniform: space2
+
+#include "fluid_solver_2d/mac_grid.hlsl"
+#include "fluid_solver_2d/fluid_field_info.hlsl"
+
+SamplerState vel_field_sampler : register(s0, space0);
+
+Texture2D<float> prev_vel_field_u : register(t0, space0);
+Texture2D<float> prev_vel_field_v : register(t1, space0);
+
+RWTexture2D<float> curr_vel_field_u : register(u0, space1);
+RWTexture2D<float> curr_vel_field_v : register(u1, space1);
+
+// This function will only be used for velocity advection.
+[numthreads(8, 8, 1)] void main(uint3 thread_id : SV_DispatchThreadID)
+{
+    if (thread_id.x >= resolution + 1)
+    {
+        return;
+    }
+    if (thread_id.y >= resolution)
+    {
+        return;
+    }
+
+    bool is_boundary_pos = thread_id.x == 0 || thread_id.x == resolution;
+
+    FluidFieldInfo field_info;
+    field_info.dx = dx;
+    field_info.rdx = rdx;
+    field_info.dt = dt;
+    field_info.rdt = rdt;
+    field_info.resolution = resolution;
+    field_info.inv_res = inv_res;
+    field_info.inv_res_plus_one = inv_res_plus_one;
+
+    float2 field_u_curr_pos = get_mac_pos_from_edge_u_pixel_coord(thread_id.xy, field_info);
+    float2 field_v_curr_pos = get_mac_pos_from_edge_v_pixel_coord(thread_id.yx, field_info);
+
+    float2 prev_vel_at_u_curr_pos = sample_vel_at_pos(prev_vel_field_u, prev_vel_field_v, vel_field_sampler, field_u_curr_pos, field_info);
+    float2 prev_vel_at_v_curr_pos = sample_vel_at_pos(prev_vel_field_u, prev_vel_field_v, vel_field_sampler, field_v_curr_pos, field_info);
+
+    float2 field_u_prev_pos = field_u_curr_pos - prev_vel_at_u_curr_pos * dt;
+    float2 field_v_prev_pos = field_v_curr_pos - prev_vel_at_v_curr_pos * dt;
+
+    float2 field_u_prev_uv = get_edge_u_uv_from_mac_pos(field_u_prev_pos, field_info);
+    float2 field_v_prev_uv = get_edge_v_uv_from_mac_pos(field_v_prev_pos, field_info);
+
+    curr_vel_field_u[thread_id.xy] = is_boundary_pos ? 0.0f : prev_vel_field_u.SampleLevel(vel_field_sampler, field_u_prev_uv, 0);
+    curr_vel_field_v[thread_id.yx] = is_boundary_pos ? 0.0f : prev_vel_field_v.SampleLevel(vel_field_sampler, field_v_prev_uv, 0);
+}

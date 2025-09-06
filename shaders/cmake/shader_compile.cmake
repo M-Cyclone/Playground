@@ -1,11 +1,11 @@
-function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR DXC_BIN)
+function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR SHADER_COMPILER)
     set(working_dir "${SHADER_ROOT_DIR}")
 
     set(ALL_GENERATED_BIN_FILES "")
     set(ALL_GENERATED_CPP_FILES "")
 
     if(UNIX)
-        execute_process(COMMAND chmod a+x ${DXC_BIN})
+        execute_process(COMMAND chmod a+x ${SHADER_COMPILER})
     endif()
 
     set(SHADER_OPTIMIZATION_LEVEL 
@@ -36,7 +36,8 @@ function(compile_shader SHADERS TARGET_NAME SHADER_INCLUDE_FOLDER GENERATED_DIR 
         if (NOT SHADER_MODEL_TYPE STREQUAL "")
             add_custom_command(
                 OUTPUT ${BIN_FILE}
-                COMMAND ${DXC_BIN} -T ${SHADER_MODEL_TYPE} -${SHADER_OPTIMIZATION_LEVEL} -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${BIN_FILE}
+                COMMAND
+                    ${SHADER_COMPILER} -T ${SHADER_MODEL_TYPE} -${SHADER_OPTIMIZATION_LEVEL} $<$<NOT:$<CONFIG:Release>>:-Zi> $<$<NOT:$<CONFIG:Release>>:-Qembed_debug> -E main ${SHADER} -I ${SHADER_INCLUDE_FOLDER} -Fo ${BIN_FILE}
                 DEPENDS ${SHADER}
                 WORKING_DIRECTORY "${working_dir}"
             )

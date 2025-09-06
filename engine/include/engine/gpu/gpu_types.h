@@ -23,6 +23,7 @@ class GpuCopyPass;
 template <typename TSdl, typename TWrapper>
 struct GpuObject
 {
+    using TSdlObj = TSdl;
     TSdl* Get() const { return static_cast<const TWrapper*>(this)->GetImpl(); }
 };
 
@@ -264,7 +265,7 @@ public:
     void PushCompShaderUniformData(uint32_t slot_index, const void* data, uint32_t data_size);
 
 public:
-    void GenerateMipmaps(const GpuTexture& texture);
+    void GenerateMipmaps(SDL_GPUTexture* texture);
     void BlitTexture(const SDL_GPUBlitInfo& info);
 
 public:
@@ -312,17 +313,17 @@ public:
     void BindIndexBuffer(const SDL_GPUBufferBinding& binding, SDL_GPUIndexElementSize index_element_size);
 
     void BindVertShaderSamplers(uint32_t first_slot, std::span<const SDL_GPUTextureSamplerBinding> texture_sampler_bindings);
-    void BindVertShaderStorageTextures(uint32_t first_slot, std::span<const GpuTexture*> storage_textures);
-    void BindVertShaderStorageBuffers(uint32_t first_slot, std::span<const GpuBuffer*> storage_buffers);
+    void BindVertShaderStorageTextures(uint32_t first_slot, std::span<SDL_GPUTexture*> storage_textures);
+    void BindVertShaderStorageBuffers(uint32_t first_slot, std::span<SDL_GPUBuffer*> storage_buffers);
 
     void BindFragShaderSamplers(uint32_t first_slot, std::span<const SDL_GPUTextureSamplerBinding> texture_sampler_bindings);
-    void BindFragShaderStorageTextures(uint32_t first_slot, std::span<const GpuTexture*> storage_textures);
-    void BindFragShaderStorageBuffers(uint32_t first_slot, std::span<const GpuBuffer*> storage_buffers);
+    void BindFragShaderStorageTextures(uint32_t first_slot, std::span<SDL_GPUTexture*> storage_textures);
+    void BindFragShaderStorageBuffers(uint32_t first_slot, std::span<SDL_GPUBuffer*> storage_buffers);
 
     void DrawIndexed(uint32_t num_indices, uint32_t num_instances, uint32_t first_index, Sint32 vertex_offset, uint32_t first_instance);
     void Draw(uint32_t num_vertices, uint32_t num_instances, uint32_t first_vertex, uint32_t first_instance);
-    void DrawIndirect(const GpuBuffer& buffer, uint32_t offset, uint32_t draw_count);
-    void DrawIndexedIndirect(const GpuBuffer& buffer, uint32_t offset, uint32_t draw_count);
+    void DrawIndirect(SDL_GPUBuffer* buffer, uint32_t offset, uint32_t draw_count);
+    void DrawIndexedIndirect(SDL_GPUBuffer* buffer, uint32_t offset, uint32_t draw_count);
 
     void EndRenderPass();
 
@@ -355,11 +356,11 @@ public:
     void BindComputePipeline(const GpuComputePipeline& compute_pipeline);
 
     void BindComputeSamplers(uint32_t first_slot, std::span<const SDL_GPUTextureSamplerBinding> texture_sampler_bindings);
-    void BindComputeStorageTextures(uint32_t first_slot, std::span<const GpuTexture*> storage_textures);
-    void BindComputeStorageBuffers(uint32_t first_slot, std::span<const GpuBuffer*> storage_buffers);
+    void BindComputeStorageTextures(uint32_t first_slot, std::span<SDL_GPUTexture*> storage_textures);
+    void BindComputeStorageBuffers(uint32_t first_slot, std::span<SDL_GPUBuffer*> storage_buffers);
 
     void Dispatch(uint32_t groupcount_x, uint32_t groupcount_y, uint32_t groupcount_z);
-    void DispatchIndirect(const GpuBuffer& buffer, uint32_t offset);
+    void DispatchIndirect(SDL_GPUBuffer* buffer, uint32_t offset);
 
     void EndComputePass();
 

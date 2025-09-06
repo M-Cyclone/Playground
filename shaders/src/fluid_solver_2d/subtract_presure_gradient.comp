@@ -1,0 +1,55 @@
+#include "fluid_solver_2d/mac_grid.hlsl"
+#include "fluid_solver_2d/fluid_field_info.hlsl"
+
+Texture2D<float> prev_vel_field_u : register(t0, space0);
+Texture2D<float> prev_vel_field_v : register(t1, space0);
+
+Texture2D<float> presure_field_v : register(t2, space0);
+
+RWTexture2D<float> result_vel_field_u : register(u0, space1);
+RWTexture2D<float> result_vel_field_v : register(u1, space1);
+
+[numthreads(8, 8, 1)] void main(uint3 thread_id : SV_DispatchThreadID)
+{
+    if (thread_id.x >= resolution + 1)
+    {
+        return;
+    }
+    if (thread_id.y >= resolution)
+    {
+        return;
+    }
+
+    if (thread_id.x == 0 || thread_id.x == resolution)
+    {
+        result_vel_field_u[thread_id.xy] = 0;
+        result_vel_field_v[thread_id.xy] = 0;
+    }
+    else
+    {
+        FluidFieldInfo field_info;
+        field_info.dx = dx;
+        field_info.rdx = rdx;
+        field_info.dt = dt;
+        field_info.rdt = rdt;
+        field_info.resolution = resolution;
+        field_info.inv_res = inv_res;
+        field_info.inv_res_plus_one = inv_res_plus_one;
+
+        // For u:
+        {
+            float presure_l = presure_field_v[uint2(thread_id.x - 1, thread_id.y)];
+            float presure_r = presure_field_v[uint2(thread_id.x, thread_id.y)];
+
+            result_vel_field_u[thread_id.xy] = prev_vel_field_u[thread_id.xy] - inv_density * dt * (presure_r - presure_l) * rdx;
+        }
+
+        // For v:
+        {
+            float presure_b = presure_field_v[uint2(thread_id.x, thread_id.y - 1)];
+            float presure_u = presure_field_v[uint2(thread_id.x, thread_id.y)];
+            
+            result_vel_field_v[thread_id.xy] = prev_vel_field_v[thread_id.xy] - inv_density * dt * (presure_u - presure_b) * rdx;
+        }
+    }
+}

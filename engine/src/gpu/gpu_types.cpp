@@ -400,14 +400,13 @@ void GpuCmdBuffer::PushCompShaderUniformData(uint32_t slot_index, const void* da
     }
 }
 
-void GpuCmdBuffer::GenerateMipmaps(const GpuTexture& texture)
+void GpuCmdBuffer::GenerateMipmaps(SDL_GPUTexture* texture)
 {
     SDL_assert(m_cmd_buffer);
     if (m_cmd_buffer)
     {
-        SDL_GPUTexture* gpu_texture = texture.Get();
-        SDL_assert(gpu_texture);
-        SDL_GenerateMipmapsForGPUTexture(m_cmd_buffer, gpu_texture);
+        SDL_assert(texture);
+        SDL_GenerateMipmapsForGPUTexture(m_cmd_buffer, texture);
     }
 }
 
@@ -582,35 +581,21 @@ void GpuRenderPass::BindVertShaderSamplers(uint32_t first_slot, std::span<const 
     }
 }
 
-void GpuRenderPass::BindVertShaderStorageTextures(uint32_t first_slot, std::span<const GpuTexture*> storage_textures)
+void GpuRenderPass::BindVertShaderStorageTextures(uint32_t first_slot, std::span<SDL_GPUTexture*> storage_textures)
 {
     SDL_assert(m_render_pass);
     if (m_render_pass)
     {
-        for (uint32_t i = 0; i < (uint32_t)storage_textures.size(); ++i)
-        {
-            const GpuTexture* texture = storage_textures[i];
-            SDL_assert(texture);
-            SDL_GPUTexture* gpu_texture = texture->Get();
-            SDL_assert(gpu_texture);
-            SDL_BindGPUVertexStorageTextures(m_render_pass, first_slot + i, &gpu_texture, 1);
-        }
+        SDL_BindGPUVertexStorageTextures(m_render_pass, first_slot, storage_textures.data(), (uint32_t)storage_textures.size());
     }
 }
 
-void GpuRenderPass::BindVertShaderStorageBuffers(uint32_t first_slot, std::span<const GpuBuffer*> storage_buffers)
+void GpuRenderPass::BindVertShaderStorageBuffers(uint32_t first_slot, std::span<SDL_GPUBuffer*> storage_buffers)
 {
     SDL_assert(m_render_pass);
     if (m_render_pass)
     {
-        for (uint32_t i = 0; i < (uint32_t)storage_buffers.size(); ++i)
-        {
-            const GpuBuffer* buffer = storage_buffers[i];
-            SDL_assert(buffer);
-            SDL_GPUBuffer* gpu_buffer = buffer->Get();
-            SDL_assert(gpu_buffer);
-            SDL_BindGPUVertexStorageBuffers(m_render_pass, first_slot + i, &gpu_buffer, 1);
-        }
+        SDL_BindGPUVertexStorageBuffers(m_render_pass, first_slot, storage_buffers.data(), (uint32_t)storage_buffers.size());
     }
 }
 
@@ -623,35 +608,21 @@ void GpuRenderPass::BindFragShaderSamplers(uint32_t first_slot, std::span<const 
     }
 }
 
-void GpuRenderPass::BindFragShaderStorageTextures(uint32_t first_slot, std::span<const GpuTexture*> storage_textures)
+void GpuRenderPass::BindFragShaderStorageTextures(uint32_t first_slot, std::span<SDL_GPUTexture*> storage_textures)
 {
     SDL_assert(m_render_pass);
     if (m_render_pass)
     {
-        for (uint32_t i = 0; i < (uint32_t)storage_textures.size(); ++i)
-        {
-            const GpuTexture* texture = storage_textures[i];
-            SDL_assert(texture);
-            SDL_GPUTexture* gpu_texture = texture->Get();
-            SDL_assert(gpu_texture);
-            SDL_BindGPUFragmentStorageTextures(m_render_pass, first_slot + i, &gpu_texture, 1);
-        }
+        SDL_BindGPUFragmentStorageTextures(m_render_pass, first_slot, storage_textures.data(), (uint32_t)storage_textures.size());
     }
 }
 
-void GpuRenderPass::BindFragShaderStorageBuffers(uint32_t first_slot, std::span<const GpuBuffer*> storage_buffers)
+void GpuRenderPass::BindFragShaderStorageBuffers(uint32_t first_slot, std::span<SDL_GPUBuffer*> storage_buffers)
 {
     SDL_assert(m_render_pass);
     if (m_render_pass)
     {
-        for (uint32_t i = 0; i < (uint32_t)storage_buffers.size(); ++i)
-        {
-            const GpuBuffer* buffer = storage_buffers[i];
-            SDL_assert(buffer);
-            SDL_GPUBuffer* gpu_buffer = buffer->Get();
-            SDL_assert(gpu_buffer);
-            SDL_BindGPUFragmentStorageBuffers(m_render_pass, first_slot + i, &gpu_buffer, 1);
-        }
+        SDL_BindGPUFragmentStorageBuffers(m_render_pass, first_slot, storage_buffers.data(), (uint32_t)storage_buffers.size());
     }
 }
 
@@ -673,25 +644,23 @@ void GpuRenderPass::Draw(uint32_t num_vertices, uint32_t num_instances, uint32_t
     }
 }
 
-void GpuRenderPass::DrawIndirect(const GpuBuffer& buffer, uint32_t offset, uint32_t draw_count)
+void GpuRenderPass::DrawIndirect(SDL_GPUBuffer* buffer, uint32_t offset, uint32_t draw_count)
 {
     SDL_assert(m_render_pass);
     if (m_render_pass)
     {
-        SDL_GPUBuffer* gpu_buffer = buffer.Get();
-        SDL_assert(gpu_buffer);
-        SDL_DrawGPUPrimitivesIndirect(m_render_pass, gpu_buffer, offset, draw_count);
+        SDL_assert(buffer);
+        SDL_DrawGPUPrimitivesIndirect(m_render_pass, buffer, offset, draw_count);
     }
 }
 
-void GpuRenderPass::DrawIndexedIndirect(const GpuBuffer& buffer, uint32_t offset, uint32_t draw_count)
+void GpuRenderPass::DrawIndexedIndirect(SDL_GPUBuffer* buffer, uint32_t offset, uint32_t draw_count)
 {
     SDL_assert(m_render_pass);
     if (m_render_pass)
     {
-        SDL_GPUBuffer* gpu_buffer = buffer.Get();
-        SDL_assert(gpu_buffer);
-        SDL_DrawGPUIndexedPrimitivesIndirect(m_render_pass, gpu_buffer, offset, draw_count);
+        SDL_assert(buffer);
+        SDL_DrawGPUIndexedPrimitivesIndirect(m_render_pass, buffer, offset, draw_count);
     }
 }
 
@@ -750,36 +719,21 @@ void GpuComputePass::BindComputeSamplers(uint32_t first_slot, std::span<const SD
     }
 }
 
-void GpuComputePass::BindComputeStorageTextures(uint32_t first_slot, std::span<const GpuTexture*> storage_textures)
+void GpuComputePass::BindComputeStorageTextures(uint32_t first_slot, std::span<SDL_GPUTexture*> storage_textures)
 {
     SDL_assert(m_compute_pass);
     if (m_compute_pass)
     {
-        for (uint32_t i = 0; i < (uint32_t)storage_textures.size(); ++i)
-        {
-            const GpuTexture* texture = storage_textures[i];
-            SDL_assert(texture);
-            SDL_GPUTexture* gpu_texture = texture->Get();
-            SDL_assert(gpu_texture);
-
-            SDL_BindGPUComputeStorageTextures(m_compute_pass, first_slot + i, &gpu_texture, 1);
-        }
+        SDL_BindGPUComputeStorageTextures(m_compute_pass, first_slot, storage_textures.data(), (uint32_t)storage_textures.size());
     }
 }
 
-void GpuComputePass::BindComputeStorageBuffers(uint32_t first_slot, std::span<const GpuBuffer*> storage_buffers)
+void GpuComputePass::BindComputeStorageBuffers(uint32_t first_slot, std::span<SDL_GPUBuffer*> storage_buffers)
 {
     SDL_assert(m_compute_pass);
     if (m_compute_pass)
     {
-        for (uint32_t i = 0; i < (uint32_t)storage_buffers.size(); ++i)
-        {
-            const GpuBuffer* buffer = storage_buffers[i];
-            SDL_assert(buffer);
-            SDL_GPUBuffer* gpu_buffer = buffer->Get();
-            SDL_assert(gpu_buffer);
-            SDL_BindGPUComputeStorageBuffers(m_compute_pass, first_slot + i, &gpu_buffer, 1);
-        }
+        SDL_BindGPUComputeStorageBuffers(m_compute_pass, first_slot, storage_buffers.data(), (uint32_t)storage_buffers.size());
     }
 }
 
@@ -792,13 +746,13 @@ void GpuComputePass::Dispatch(uint32_t groupcount_x, uint32_t groupcount_y, uint
     }
 }
 
-void GpuComputePass::DispatchIndirect(const GpuBuffer& buffer, uint32_t offset)
+void GpuComputePass::DispatchIndirect(SDL_GPUBuffer* buffer, uint32_t offset)
 {
     SDL_assert(m_compute_pass);
     if (m_compute_pass)
     {
-        SDL_GPUBuffer* gpu_buffer = buffer.Get();
-        SDL_DispatchGPUComputeIndirect(m_compute_pass, gpu_buffer, offset);
+        SDL_assert(buffer);
+        SDL_DispatchGPUComputeIndirect(m_compute_pass, buffer, offset);
     }
 }
 

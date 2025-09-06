@@ -23,7 +23,7 @@ target_link_libraries(${TARGET_NAME}
     PRIVATE SDL3::SDL3-shared
 )
 target_compile_definitions(${TARGET_NAME}
-    PUBLIC $<$<CONFIG:Debug>:PLAYGROUND_DEBUG=1>
+    PUBLIC $<$<NOT:$<CONFIG:Release>>:PLAYGROUND_DEBUG=1>
     PUBLIC $<$<CONFIG:Release>:PLAYGROUND_DEBUG=0>
 )
 

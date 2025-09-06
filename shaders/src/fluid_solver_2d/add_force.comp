@@ -1,0 +1,28 @@
+#include "fluid_solver_2d/mac_grid.hlsl"
+#include "fluid_solver_2d/fluid_field_info.hlsl"
+
+Texture2D<float> advection_result_vel_u : register(t0, space0);
+Texture2D<float> advection_result_vel_v : register(t1, space0);
+
+RWTexture2D<float> add_force_reuslt_vel_u : register(u0, space1);
+RWTexture2D<float> add_force_reuslt_vel_v : register(u1, space1);
+
+[numthreads(8, 8, 1)] void main(uint3 thread_id : SV_DispatchThreadID)
+{
+    if (thread_id.x >= resolution + 1)
+    {
+        return;
+    }
+    if (thread_id.y >= resolution)
+    {
+        return;
+    }
+
+    bool is_boundary_pos = thread_id.x == 0 || thread_id.x == resolution;
+
+    float advection_vel_u = advection_result_vel_u[thread_id.xy];
+    float advection_vel_v = advection_result_vel_v[thread_id.yx];
+
+    add_force_reuslt_vel_u[thread_id.xy] = is_boundary_pos ? 0.0f : advection_vel_u;
+    add_force_reuslt_vel_v[thread_id.yx] = is_boundary_pos ? 0.0f : advection_vel_v - gravity * dt; // -y is the gravity direction.
+}

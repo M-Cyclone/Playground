@@ -1,0 +1,27 @@
+#include "fluid_solver_2d/mac_grid.hlsl"
+#include "fluid_solver_2d/fluid_field_info.hlsl"
+
+Texture2D<float> vel_field_u : register(t0, space0);
+Texture2D<float> vel_field_v : register(t1, space0);
+
+RWTexture2D<float> divergence_field : register(u0, space1);
+
+[numthreads(8, 8, 1)] void main(uint3 thread_id : SV_DispatchThreadID)
+{
+    // Unlikely.
+    // if (thread_id.x >= resolution + 1)
+    // {
+    //     return;
+    // }
+    // if (thread_id.y >= resolution)
+    // {
+    //     return;
+    // }
+
+    float vel_u_l = vel_field_u[thread_id.xy];
+    float vel_u_r = vel_field_u[uint2(thread_id.x + 1, thread_id.y)];
+    float vel_v_l = vel_field_v[thread_id.xy];
+    float vel_v_r = vel_field_v[uint2(thread_id.x, thread_id.y + 1)];
+
+    divergence_field[thread_id.xy] = ((vel_u_r - vel_u_l) + (vel_v_r - vel_v_l)) * rdx;
+}
