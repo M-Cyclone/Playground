@@ -290,6 +290,134 @@ void FluidSolver2d::ApplyZeroInitializationCondition(GpuDevice& gpu_device)
     cmd.Submit();
 }
 
+void FluidSolver2d::ApplyGaussianDistributionPresure(GpuDevice& gpu_device)
+{
+    SDL_GPUTransferBufferCreateInfo tb_info{};
+    tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+    tb_info.size = m_resolution * (m_resolution + 1) * sizeof(float);
+
+    GpuTransferBuffer upload_buffer(gpu_device, tb_info);
+
+    float* ptr = (float*)upload_buffer.Map(false);
+    if (ptr)
+    {
+        std::memset(ptr, 0, tb_info.size);
+        upload_buffer.Unmap();
+    }
+
+    {
+        GpuCmdBuffer cmd(gpu_device);
+        GpuCopyPass copy_pass(cmd);
+        if (copy_pass.BeginCopyPass())
+        {
+            SDL_GPUTextureTransferInfo source_buffer{};
+            source_buffer.transfer_buffer = upload_buffer.Get();
+            source_buffer.offset = 0;
+
+            SDL_GPUTextureRegion target_texture{};
+            target_texture.mip_level = 0;
+            target_texture.layer = 0;
+            target_texture.x = 0;
+            target_texture.y = 0;
+            target_texture.z = 0;
+            target_texture.d = 1;
+
+            {
+                source_buffer.pixels_per_row = m_resolution + 1;
+                source_buffer.rows_per_layer = m_resolution;
+
+                target_texture.w = m_resolution + 1;
+                target_texture.h = m_resolution;
+
+                target_texture.texture = m_velocity_field_u->GetCurr();
+                copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+
+                target_texture.texture = m_velocity_field_u->GetPrev();
+                copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+            }
+
+            {
+                source_buffer.pixels_per_row = m_resolution;
+                source_buffer.rows_per_layer = m_resolution + 1;
+
+                target_texture.w = m_resolution;
+                target_texture.h = m_resolution + 1;
+
+                target_texture.texture = m_velocity_field_v->GetCurr();
+                copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+
+                target_texture.texture = m_velocity_field_v->GetPrev();
+                copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+            }
+
+            copy_pass.EndCopyPass();
+        }
+        cmd.Submit();
+    }
+
+    {
+        GpuCmdBuffer cmd(gpu_device);
+        ptr = (float*)upload_buffer.Map(false);
+        if (ptr)
+        {
+            const float sigma = m_range * 0.001f;
+            const float sigma_sqr = sigma * sigma;
+            const float inv_coe = 1.0f / (2.0f * sigma_sqr);
+            for (int32_t y = 0; y < m_resolution; ++y)
+            {
+                for (int32_t x = 0; x < m_resolution; ++x)
+                {
+                    const int32_t idx = x + y * m_resolution;
+
+                    const float u = (x + 0.5f) / m_resolution;
+                    const float v = (y + 0.5f) / m_resolution;
+
+                    const float pos_x = u * 2.0f - 1.0f;
+                    const float pos_y = v * 2.0f - 1.0f;
+
+                    ptr[idx] = 1000.0f * std::exp(-inv_coe * (pos_x * pos_x + pos_y * pos_y));
+                }
+            }
+
+            upload_buffer.Unmap();
+        }
+
+        GpuCopyPass copy_pass(cmd);
+        if (copy_pass.BeginCopyPass())
+        {
+            SDL_GPUTextureTransferInfo source_buffer{};
+            source_buffer.transfer_buffer = upload_buffer.Get();
+            source_buffer.offset = 0;
+
+            SDL_GPUTextureRegion target_texture{};
+            target_texture.mip_level = 0;
+            target_texture.layer = 0;
+            target_texture.x = 0;
+            target_texture.y = 0;
+            target_texture.z = 0;
+            target_texture.d = 1;
+
+            {
+                source_buffer.pixels_per_row = m_resolution;
+                source_buffer.rows_per_layer = m_resolution;
+
+                target_texture.w = m_resolution;
+                target_texture.h = m_resolution;
+
+                target_texture.texture = m_presure_field->GetPrev();
+                copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+
+                target_texture.texture = m_presure_field->GetCurr();
+                copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+            }
+
+            copy_pass.EndCopyPass();
+        }
+
+        cmd.Submit();
+    }
+}
+
 void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)
 {
     m_elapsed_time += dt;
@@ -384,7 +512,7 @@ void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)
             }
         }
         {
-            static constexpr int32_t k_max_iteration_count = 20;
+            static constexpr int32_t k_max_iteration_count = 50;
 
             for (int32_t idx = 0; idx < k_max_iteration_count; ++idx)
             {

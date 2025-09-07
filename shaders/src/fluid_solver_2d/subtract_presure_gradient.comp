@@ -1,10 +1,11 @@
 #include "fluid_solver_2d/mac_grid.hlsl"
 #include "fluid_solver_2d/fluid_field_info.hlsl"
+#include "fluid_solver_2d/presure_boundary_condition.hlsl"
 
 Texture2D<float> prev_vel_field_u : register(t0, space0);
 Texture2D<float> prev_vel_field_v : register(t1, space0);
 
-Texture2D<float> presure_field_v : register(t2, space0);
+Texture2D<float> presure_field : register(t2, space0);
 
 RWTexture2D<float> result_vel_field_u : register(u0, space1);
 RWTexture2D<float> result_vel_field_v : register(u1, space1);
@@ -27,27 +28,18 @@ RWTexture2D<float> result_vel_field_v : register(u1, space1);
     }
     else
     {
-        FluidFieldInfo field_info;
-        field_info.dx = dx;
-        field_info.rdx = rdx;
-        field_info.dt = dt;
-        field_info.rdt = rdt;
-        field_info.resolution = resolution;
-        field_info.inv_res = inv_res;
-        field_info.inv_res_plus_one = inv_res_plus_one;
-
         // For u:
         {
-            float presure_l = presure_field_v[uint2(thread_id.x - 1, thread_id.y)];
-            float presure_r = presure_field_v[uint2(thread_id.x, thread_id.y)];
+            float presure_l = get_presure_safe(int2((int)thread_id.x - 1, (int)thread_id.y), resolution, presure_field);
+            float presure_r = get_presure_safe(int2((int)thread_id.x, (int)thread_id.y), resolution, presure_field);
 
             result_vel_field_u[thread_id.xy] = prev_vel_field_u[thread_id.xy] - inv_density * dt * (presure_r - presure_l) * rdx;
         }
 
         // For v:
         {
-            float presure_b = presure_field_v[uint2(thread_id.x, thread_id.y - 1)];
-            float presure_u = presure_field_v[uint2(thread_id.x, thread_id.y)];
+            float presure_b = get_presure_safe(int2((int)thread_id.y, (int)thread_id.x - 1), resolution, presure_field);
+            float presure_u = get_presure_safe(int2((int)thread_id.y, (int)thread_id.x), resolution, presure_field);
             
             result_vel_field_v[thread_id.yx] = prev_vel_field_v[thread_id.yx] - inv_density * dt * (presure_u - presure_b) * rdx;
         }

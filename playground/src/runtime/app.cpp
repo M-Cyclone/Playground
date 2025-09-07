@@ -275,9 +275,9 @@ int32_t App::Init()
         create_info.min_filter = SDL_GPU_FILTER_LINEAR;
         create_info.mag_filter = SDL_GPU_FILTER_LINEAR;
         create_info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
-        create_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-        create_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-        create_info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+        create_info.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_MIRRORED_REPEAT;
+        create_info.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_MIRRORED_REPEAT;
+        create_info.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_MIRRORED_REPEAT;
 
         m_sampler = std::make_unique<GpuSampler>(*m_gpu_device, create_info);
     }
@@ -285,6 +285,7 @@ int32_t App::Init()
     {
         m_fluid_solver = std::make_unique<FluidSolver2d>(*m_gpu_device, 10.0f);
         m_fluid_solver->ApplyZeroInitializationCondition(*m_gpu_device);
+        //m_fluid_solver->ApplyGaussianDistributionPresure(*m_gpu_device);
     }
 
     return 0;

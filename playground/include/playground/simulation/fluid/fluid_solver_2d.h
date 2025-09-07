@@ -63,6 +63,7 @@ private:
 
 public:
     void ApplyZeroInitializationCondition(GpuDevice& gpu_device);
+    void ApplyGaussianDistributionPresure(GpuDevice& gpu_device);
 
     SDL_GPUTexture* GetPresureField() const { return m_presure_field->GetCurr(); }
 
