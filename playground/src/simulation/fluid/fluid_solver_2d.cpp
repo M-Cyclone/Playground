@@ -457,11 +457,24 @@ SDL_GPUTexture* FluidSolver2d::GetTypedAdvectedFieldPrev(EAdvectedFieldType fiel
     return it != m_advected_fields.end() ? it->second->GetCurr() : nullptr;
 }
 
-void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)
+void FluidSolver2d::Schedule(float dt)
 {
     m_elapsed_time += dt;
     if (m_elapsed_time >= FluidConsts::k_sim_dt)
     {
+        // This makes we only tick one time event dt is extremely large.
+        m_elapsed_time = std::fmod(m_elapsed_time, FluidConsts::k_sim_dt);
+
+        m_need_tick = true;
+    }
+}
+
+void FluidSolver2d::Execute(GpuCmdBuffer& cmd)
+{
+    if (m_need_tick)
+    {
+        m_need_tick = false;
+
         // This makes we only tick one time event dt is extremely large.
         m_elapsed_time = std::fmod(m_elapsed_time, FluidConsts::k_sim_dt);
 

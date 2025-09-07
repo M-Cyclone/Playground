@@ -101,10 +101,12 @@ private:
     std::map<EAdvectedFieldType, std::unique_ptr<PingpongBuffer<GpuTexture>>> m_advected_fields;
 
 public:
-    void Tick(GpuCmdBuffer& cmd, float dt);
+    void Schedule(float dt);
+    void Execute(GpuCmdBuffer& cmd);
     //void RenderToRt();
 
 private:
+    bool m_need_tick = false;
     float m_elapsed_time = 0.0f;
 
     std::unique_ptr<GpuSampler> m_bilinear_field_sampler;

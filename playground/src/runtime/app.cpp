@@ -389,6 +389,7 @@ void App::Exit()
 
 void App::Update(float delta_seconds)
 {
+    m_fluid_solver->Schedule(delta_seconds);
 }
 
 void App::Render(float delta_seconds)
@@ -396,7 +397,7 @@ void App::Render(float delta_seconds)
     GpuCmdBuffer cmd(*m_gpu_device);
 
     {
-        m_fluid_solver->Tick(cmd, delta_seconds);
+        m_fluid_solver->Execute(cmd);
     }
 
     SDL_GPUTexture* swapchain_texture = nullptr;
