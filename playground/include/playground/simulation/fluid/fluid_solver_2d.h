@@ -2,6 +2,9 @@
 
 #include <engine/gpu/gpu_types.h>
 
+#include <map>
+#include <string>
+
 namespace FluidConsts
 {
     // unit: kg*m/s^2
@@ -50,6 +53,14 @@ private:
     int32_t m_curr_buffer_index = 0;
 };
 
+enum class EAdvectedFieldType
+{
+    Dye,
+    Tempreture,
+    Presure,
+    Count
+};
+
 class FluidSolver2d
 {
 public:
@@ -65,7 +76,16 @@ public:
     void ApplyZeroInitializationCondition(GpuDevice& gpu_device);
     void ApplyGaussianDistributionPresure(GpuDevice& gpu_device);
 
+public:
+    SDL_GPUTexture* GetVelocityFieldU() const { return m_velocity_field_u->GetCurr(); }
+    SDL_GPUTexture* GetVelocityFieldV() const { return m_velocity_field_v->GetCurr(); }
+    SDL_GPUTexture* GetVelocityDivergence() const { return m_velocity_divergence_field->Get(); }
+
     SDL_GPUTexture* GetPresureField() const { return m_presure_field->GetCurr(); }
+
+    void AddAdvectedField(GpuDevice& gpu_device, EAdvectedFieldType field_type, int32_t resolution);
+    SDL_GPUTexture* GetTypedAdvectedField(EAdvectedFieldType field_type) const;
+    SDL_GPUTexture* GetTypedAdvectedFieldPrev(EAdvectedFieldType field_type) const;
 
 private:
     // unit: m/s.
@@ -77,6 +97,9 @@ private:
     // unit: kg/(m*s^2)
     std::unique_ptr<PingpongBuffer<GpuTexture>> m_presure_field;
 
+    std::map<EAdvectedFieldType, int32_t> m_advected_field_resolutions;
+    std::map<EAdvectedFieldType, std::unique_ptr<PingpongBuffer<GpuTexture>>> m_advected_fields;
+
 public:
     void Tick(GpuCmdBuffer& cmd, float dt);
     //void RenderToRt();
@@ -87,11 +110,10 @@ private:
     std::unique_ptr<GpuSampler> m_bilinear_field_sampler;
 
     std::unique_ptr<GpuComputePipeline> m_advection_edge_pipeline;
-    std::unique_ptr<GpuComputePipeline> m_advection_center_pipeline;
     std::unique_ptr<GpuComputePipeline> m_add_force_pipeline;
     std::unique_ptr<GpuComputePipeline> m_cal_divergence_pipeline;
     std::unique_ptr<GpuComputePipeline> m_jacobi_iteration_pipeline;
     std::unique_ptr<GpuComputePipeline> m_subtract_presure_pipeline;
 
-    std::unique_ptr<GpuGraphicsPipeline> m_present_pipeline;
+    std::unique_ptr<GpuComputePipeline> m_advection_center_pipeline;
 };

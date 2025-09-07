@@ -286,6 +286,87 @@ int32_t App::Init()
         m_fluid_solver = std::make_unique<FluidSolver2d>(*m_gpu_device, 10.0f);
         m_fluid_solver->ApplyZeroInitializationCondition(*m_gpu_device);
         //m_fluid_solver->ApplyGaussianDistributionPresure(*m_gpu_device);
+        m_fluid_solver->AddAdvectedField(*m_gpu_device, EAdvectedFieldType::Dye, 512);
+
+        {
+            SDL_GPUTransferBufferCreateInfo tb_info{};
+            tb_info.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+            tb_info.size = 512 * 512 * sizeof(float);
+
+            GpuTransferBuffer upload_buffer(*m_gpu_device, tb_info);
+
+            float* ptr = (float*)upload_buffer.Map(false);
+            if (ptr)
+            {
+                for (int32_t y = 0; y < 512; ++y)
+                {
+                    for (int32_t x = 0; x < 512; ++x)
+                    {
+                        const int32_t idx = x + 512 * y;
+
+                        if (x % 32 < 16)
+                        {
+                            if (y % 32 < 16)
+                            {
+                                ptr[idx] = 0.0f;
+                            }
+                            else
+                            {
+                                ptr[idx] = 1.0f;
+                            }
+                        }
+                        else
+                        {
+                            if (y % 32 < 16)
+                            {
+                                ptr[idx] = 1.0f;
+                            }
+                            else
+                            {
+                                ptr[idx] = 0.0f;
+                            }
+                        }
+                    }
+                }
+
+                upload_buffer.Unmap();
+            }
+
+            GpuCmdBuffer cmd(*m_gpu_device);
+            GpuCopyPass copy_pass(cmd);
+            if (copy_pass.BeginCopyPass())
+            {
+                SDL_GPUTextureTransferInfo source_buffer{};
+                source_buffer.transfer_buffer = upload_buffer.Get();
+                source_buffer.offset = 0;
+
+                SDL_GPUTextureRegion target_texture{};
+                target_texture.mip_level = 0;
+                target_texture.layer = 0;
+                target_texture.x = 0;
+                target_texture.y = 0;
+                target_texture.z = 0;
+                target_texture.d = 1;
+
+                {
+                    source_buffer.pixels_per_row = 512;
+                    source_buffer.rows_per_layer = 512;
+
+                    target_texture.w = 512;
+                    target_texture.h = 512;
+
+                    target_texture.texture = m_fluid_solver->GetTypedAdvectedField(EAdvectedFieldType::Dye);
+                    copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+
+                    target_texture.texture = m_fluid_solver->GetTypedAdvectedFieldPrev(EAdvectedFieldType::Dye);
+                    copy_pass.UploadToGPUTexture(source_buffer, target_texture, false);
+                }
+
+                copy_pass.EndCopyPass();
+            }
+
+            cmd.Submit();
+        }
     }
 
     return 0;
@@ -353,7 +434,7 @@ void App::Render(float delta_seconds)
                 render_pass.BindIndexBuffer(index_buffer_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
 
                 SDL_GPUTextureSamplerBinding textures[1] = {};
-                textures[0].texture = m_fluid_solver->GetPresureField();
+                textures[0].texture = m_fluid_solver->GetTypedAdvectedField(EAdvectedFieldType::Dye);
                 textures[0].sampler = m_sampler->Get();
                 render_pass.BindFragShaderSamplers(0, textures);
 

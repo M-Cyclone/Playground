@@ -16,5 +16,5 @@ SamplerState sc_sampler : register(s0, space2);
 
 float4 main(Output vs_input) : SV_Target0
 {
-    return sc_texture.Sample(sc_sampler, vs_input.texcoord);
+    return float4(sc_texture.Sample(sc_sampler, vs_input.texcoord));
 }

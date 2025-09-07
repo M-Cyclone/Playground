@@ -21,11 +21,15 @@ RWTexture2D<float> curr_center_field : register(u0, space1);
 
 [numthreads(8, 8, 1)] void main(uint3 thread_id : SV_DispatchThreadID)
 {
-    if (thread_id.x >= resolution + 1)
+    float field_w;
+    float field_h;
+    curr_center_field.GetDimensions(field_w, field_h);
+
+    if (thread_id.x >= field_w)
     {
         return;
     }
-    if (thread_id.y >= resolution)
+    if (thread_id.y >= field_h)
     {
         return;
     }
@@ -39,7 +43,8 @@ RWTexture2D<float> curr_center_field : register(u0, space1);
     field_info.inv_res = inv_res;
     field_info.inv_res_plus_one = inv_res_plus_one;
 
-    float2 curr_pos = ((float2)(thread_id.xy) + float2(0.5f, 0.5f)) * dx;
+    float2 curr_center_field_uv = float2((thread_id.x + 0.5f) / field_w, (thread_id.y + 0.5f) / field_h);
+    float2 curr_pos = curr_center_field_uv * resolution * dx;
 
     float2 prev_vel_at_curr_pos = sample_vel_at_pos(prev_vel_field_u, prev_vel_field_v, vel_field_sampler, curr_pos, field_info);
 

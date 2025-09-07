@@ -199,15 +199,22 @@ FluidSolver2d::FluidSolver2d(GpuDevice& gpu_device, float range, float expected_
     }
 
     {
-        SDL_GPUGraphicsPipelineCreateInfo present_pipeline_create_info{};
-        SDL_GPUShader* vertex_shader;
-        SDL_GPUShader* fragment_shader;
-        SDL_GPUVertexInputState vertex_input_state;
-        SDL_GPUPrimitiveType primitive_type;
-        SDL_GPURasterizerState rasterizer_state;
-        SDL_GPUMultisampleState multisample_state;
-        SDL_GPUDepthStencilState depth_stencil_state;
-        SDL_GPUGraphicsPipelineTargetInfo target_info;
+        SDL_GPUComputePipelineCreateInfo advection_center_create_info{};
+        advection_center_create_info.code_size = sizeof(ADVECTION_MAC_CENTER_COMP);
+        advection_center_create_info.code = ADVECTION_MAC_CENTER_COMP;
+        advection_center_create_info.entrypoint = "main";
+        advection_center_create_info.format = SDL_GPU_SHADERFORMAT_DXIL;
+        advection_center_create_info.num_samplers = 2;
+        advection_center_create_info.num_readonly_storage_textures = 1;
+        advection_center_create_info.num_readonly_storage_buffers = 0;
+        advection_center_create_info.num_readwrite_storage_textures = 1;
+        advection_center_create_info.num_readwrite_storage_buffers = 0;
+        advection_center_create_info.num_uniform_buffers = 1;
+        advection_center_create_info.threadcount_x = FluidConsts::k_num_thread_count;
+        advection_center_create_info.threadcount_y = FluidConsts::k_num_thread_count;
+        advection_center_create_info.threadcount_z = 1;
+
+        m_advection_center_pipeline = std::make_unique<GpuComputePipeline>(gpu_device, advection_center_create_info);
     }
 }
 
@@ -355,6 +362,7 @@ void FluidSolver2d::ApplyGaussianDistributionPresure(GpuDevice& gpu_device)
         cmd.Submit();
     }
 
+
     {
         GpuCmdBuffer cmd(gpu_device);
         ptr = (float*)upload_buffer.Map(false);
@@ -375,7 +383,7 @@ void FluidSolver2d::ApplyGaussianDistributionPresure(GpuDevice& gpu_device)
                     const float pos_x = u * 2.0f - 1.0f;
                     const float pos_y = v * 2.0f - 1.0f;
 
-                    ptr[idx] = 1000.0f * std::exp(-inv_coe * (pos_x * pos_x + pos_y * pos_y));
+                    ptr[idx] = 100000.0f * std::exp(-inv_coe * (pos_x * pos_x + pos_y * pos_y));
                 }
             }
 
@@ -416,6 +424,37 @@ void FluidSolver2d::ApplyGaussianDistributionPresure(GpuDevice& gpu_device)
 
         cmd.Submit();
     }
+}
+
+void FluidSolver2d::AddAdvectedField(GpuDevice& gpu_device, EAdvectedFieldType field_type, int32_t resolution)
+{
+    if (m_advected_fields.find(field_type) == m_advected_fields.end())
+    {
+        SDL_GPUTextureCreateInfo create_info{};
+        create_info.type = SDL_GPU_TEXTURETYPE_2D;
+        create_info.format = SDL_GPU_TEXTUREFORMAT_R32_FLOAT;
+        create_info.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_READ | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE;
+        create_info.width = resolution;
+        create_info.height = resolution;
+        create_info.layer_count_or_depth = 1;
+        create_info.num_levels = 1;
+        create_info.sample_count = SDL_GPU_SAMPLECOUNT_1;
+
+        m_advected_fields.emplace(field_type, std::make_unique<PingpongBuffer<GpuTexture>>(gpu_device, create_info));
+        m_advected_field_resolutions[field_type] = resolution;
+    }
+}
+
+SDL_GPUTexture* FluidSolver2d::GetTypedAdvectedField(EAdvectedFieldType field_type) const
+{
+    auto it = m_advected_fields.find(field_type);
+    return it != m_advected_fields.end() ? it->second->GetCurr() : nullptr;
+}
+
+SDL_GPUTexture* FluidSolver2d::GetTypedAdvectedFieldPrev(EAdvectedFieldType field_type) const
+{
+    auto it = m_advected_fields.find(field_type);
+    return it != m_advected_fields.end() ? it->second->GetCurr() : nullptr;
 }
 
 void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)
@@ -560,6 +599,37 @@ void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)
                 subtract_presure_pass.Dispatch((m_resolution + FluidConsts::k_num_thread_count) / FluidConsts::k_num_thread_count, m_resolution / FluidConsts::k_num_thread_count, 1);
 
                 subtract_presure_pass.EndComputePass();
+            }
+        }
+        {
+            SDL_GPUTextureSamplerBinding velocity_fields[2] = {};
+            velocity_fields[0].texture = m_velocity_field_u->GetCurr();
+            velocity_fields[0].sampler = m_bilinear_field_sampler->Get();
+            velocity_fields[1].texture = m_velocity_field_v->GetCurr();
+            velocity_fields[1].sampler = m_bilinear_field_sampler->Get();
+
+            for (auto& [type, field] : m_advected_fields)
+            {
+                field->Swap();
+
+                SDL_GPUStorageTextureReadWriteBinding advected_field_bindings[1] = {};
+                advected_field_bindings[0].texture = field->GetCurr();
+
+                GpuComputePass advected_field_pass(cmd);
+                if (advected_field_pass.BeginComputePass(advected_field_bindings, {}))
+                {
+                    advected_field_pass.BindComputePipeline(*m_advection_center_pipeline);
+
+                    advected_field_pass.BindComputeSamplers(0, velocity_fields);
+
+                    SDL_GPUTexture* prev_field[1] = { field->GetPrev() };
+                    advected_field_pass.BindComputeStorageTextures(0, prev_field);
+
+                    const int32_t resolution = m_advected_field_resolutions[type];
+                    advected_field_pass.Dispatch((resolution + FluidConsts::k_num_thread_count - 1) / FluidConsts::k_num_thread_count, (resolution + FluidConsts::k_num_thread_count - 1) / FluidConsts::k_num_thread_count, 1);
+
+                    advected_field_pass.EndComputePass();
+                }
             }
         }
     }
