@@ -23,7 +23,7 @@ RWTexture2D<float> result_vel_field_v : register(u1, space1);
     if (thread_id.x == 0 || thread_id.x == resolution)
     {
         result_vel_field_u[thread_id.xy] = 0;
-        result_vel_field_v[thread_id.xy] = 0;
+        result_vel_field_v[thread_id.yx] = 0;
     }
     else
     {
@@ -49,7 +49,7 @@ RWTexture2D<float> result_vel_field_v : register(u1, space1);
             float presure_b = presure_field_v[uint2(thread_id.x, thread_id.y - 1)];
             float presure_u = presure_field_v[uint2(thread_id.x, thread_id.y)];
             
-            result_vel_field_v[thread_id.xy] = prev_vel_field_v[thread_id.xy] - inv_density * dt * (presure_u - presure_b) * rdx;
+            result_vel_field_v[thread_id.yx] = prev_vel_field_v[thread_id.yx] - inv_density * dt * (presure_u - presure_b) * rdx;
         }
     }
 }

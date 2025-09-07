@@ -306,6 +306,9 @@ void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)
         cmd.PushCompShaderUniformData(0, &field_info, sizeof(field_info));
 
         {
+            m_velocity_field_u->Swap();
+            m_velocity_field_v->Swap();
+
             SDL_GPUStorageTextureReadWriteBinding advection_result_bindings[2] = {};
             advection_result_bindings[0].texture = m_velocity_field_u->GetCurr();
             advection_result_bindings[1].texture = m_velocity_field_v->GetCurr();
