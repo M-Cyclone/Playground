@@ -64,7 +64,7 @@ private:
 public:
     void ApplyZeroInitializationCondition(GpuDevice& gpu_device);
 
-    void RenderPresureFieldToTexture(GpuCmdBuffer& cmd, SDL_GPUTexture* target_texture);
+    SDL_GPUTexture* GetPresureField() const { return m_presure_field->GetCurr(); }
 
 private:
     // unit: m/s.
@@ -91,4 +91,6 @@ private:
     std::unique_ptr<GpuComputePipeline> m_cal_divergence_pipeline;
     std::unique_ptr<GpuComputePipeline> m_jacobi_iteration_pipeline;
     std::unique_ptr<GpuComputePipeline> m_subtract_presure_pipeline;
+
+    std::unique_ptr<GpuGraphicsPipeline> m_present_pipeline;
 };

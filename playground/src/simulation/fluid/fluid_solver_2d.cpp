@@ -197,6 +197,18 @@ FluidSolver2d::FluidSolver2d(GpuDevice& gpu_device, float range, float expected_
 
         m_subtract_presure_pipeline = std::make_unique<GpuComputePipeline>(gpu_device, substruct_presure_create_info);
     }
+
+    {
+        SDL_GPUGraphicsPipelineCreateInfo present_pipeline_create_info{};
+        SDL_GPUShader* vertex_shader;
+        SDL_GPUShader* fragment_shader;
+        SDL_GPUVertexInputState vertex_input_state;
+        SDL_GPUPrimitiveType primitive_type;
+        SDL_GPURasterizerState rasterizer_state;
+        SDL_GPUMultisampleState multisample_state;
+        SDL_GPUDepthStencilState depth_stencil_state;
+        SDL_GPUGraphicsPipelineTargetInfo target_info;
+    }
 }
 
 void FluidSolver2d::ApplyZeroInitializationCondition(GpuDevice& gpu_device)
@@ -276,11 +288,6 @@ void FluidSolver2d::ApplyZeroInitializationCondition(GpuDevice& gpu_device)
     }
 
     cmd.Submit();
-}
-
-void FluidSolver2d::RenderPresureFieldToTexture(GpuCmdBuffer& cmd, SDL_GPUTexture* target_texture)
-{
-    SDL_assert(target_texture);
 }
 
 void FluidSolver2d::Tick(GpuCmdBuffer& cmd, float dt)

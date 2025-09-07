@@ -42,5 +42,7 @@ private:
     std::unique_ptr<GpuBuffer> m_vertex_buffer;
     std::unique_ptr<GpuBuffer> m_index_buffer;
 
+    std::unique_ptr<GpuSampler> m_sampler;
+
     std::unique_ptr<FluidSolver2d> m_fluid_solver;
 };

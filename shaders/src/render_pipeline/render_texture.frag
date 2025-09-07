@@ -11,7 +11,10 @@ struct Output
     float2 texcoord : TEXCOORD0;
 };
 
+Texture2D<float4> sc_texture : register(t0, space2);
+SamplerState sc_sampler : register(s0, space2);
+
 float4 main(Output vs_input) : SV_Target0
 {
-    return float4(vs_input.texcoord, 1.0f, 1.0f);
+    return sc_texture.Sample(sc_sampler, vs_input.texcoord);
 }
